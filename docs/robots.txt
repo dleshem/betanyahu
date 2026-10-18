@@ -1,0 +1,3 @@
+User-agent: *
+Disallow:
+Sitemap: https://betanyahu.com/sitemap.xml
