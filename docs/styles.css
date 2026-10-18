@@ -1,9 +1,30 @@
 :root {
-    color-scheme: light;
+    color-scheme: light dark;
+    --text-color: #172d29;
+    --page-background: #fafbf9;
+    --divider-color: #e5e9e2;
+    --portrait-background: #e9ede7;
+    --accent-color: #176d4d;
+    --button-border-color: #d8e0d5;
+    --button-hover-background: #eef3e9;
+    --focus-color: #339b76;
     font-family: Arial, "Noto Sans Hebrew", sans-serif;
-    color: #172d29;
-    background: #fafbf9;
+    color: var(--text-color);
+    background: var(--page-background);
     font-synthesis: none;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --text-color: #e4eee8;
+        --page-background: #101a17;
+        --divider-color: #2b3c34;
+        --portrait-background: #26372f;
+        --accent-color: #80d5ae;
+        --button-border-color: #496355;
+        --button-hover-background: #21392d;
+        --focus-color: #80d5ae;
+    }
 }
 
 * { box-sizing: border-box; }
@@ -17,19 +38,19 @@ body { margin: 0; }
     gap: 20px;
     align-items: center;
     padding: 24px 0;
-    border-bottom: 1px solid #e5e9e2;
+    border-bottom: 1px solid var(--divider-color);
 }
 .candidate:last-child { border-bottom: 0; }
-.portrait { width: 72px; height: 72px; border-radius: 50%; overflow: hidden; background: #e9ede7; }
+.portrait { width: 72px; height: 72px; border-radius: 50%; overflow: hidden; background: var(--portrait-background); }
 .portrait img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .candidate-name { font-size: 22px; font-weight: 600; overflow-wrap: anywhere; text-align: right; }
 .probability { direction: ltr; font-size: 32px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.8px; }
 .feedback { display: flex; justify-content: center; }
-.loading { width: 24px; height: 24px; margin: 24px; border: 2px solid #e5e9e2; border-top-color: #176d4d; border-radius: 50%; animation: spin 1s linear infinite; }
-button { display: grid; place-items: center; width: 40px; height: 40px; margin: 24px; padding: 8px; border: 1px solid #d8e0d5; border-radius: 50%; background: transparent; color: #176d4d; cursor: pointer; }
-button:hover { background: #eef3e9; }
+.loading { width: 24px; height: 24px; margin: 24px; border: 2px solid var(--divider-color); border-top-color: var(--accent-color); border-radius: 50%; animation: spin 1s linear infinite; }
+button { display: grid; place-items: center; width: 40px; height: 40px; margin: 24px; padding: 8px; border: 1px solid var(--button-border-color); border-radius: 50%; background: transparent; color: var(--accent-color); cursor: pointer; }
+button:hover { background: var(--button-hover-background); }
 button svg { width: 22px; height: 22px; }
-:focus-visible { outline: 3px solid #339b76; outline-offset: 4px; }
+:focus-visible { outline: 3px solid var(--focus-color); outline-offset: 4px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 @media (prefers-reduced-motion: reduce) {
