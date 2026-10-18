@@ -30,14 +30,29 @@
     </head>
 
     <body>
-        <main class="page" id="odds-panel" aria-label="סיכויי המועמדים לראשות הממשלה" aria-busy="true">
-            <ol class="candidates" id="candidates"></ol>
-            <div class="feedback">
-                <span class="loading" id="loading" role="status" aria-label="טוענים את הסיכויים"></span>
-                <button id="retry" type="button" aria-label="טעינת הסיכויים נכשלה. נסו שוב" hidden>
-                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M6.1 6.1A8 8 0 0 1 20 12M4 12a8 8 0 0 0 13.9 5.9"/></svg>
-                </button>
-            </div>
+        <main class="page">
+            <aside class="updates" id="updates" aria-label="עדכוני נתונים" data-state="loading">
+                <p class="source-note"><span class="status-dot" aria-hidden="true"></span><span>כל הנתונים כאן מגיעים מ־<a href="https://polymarket.com/event/who-will-be-the-next-prime-minister-of-israel-after-the-next-election" dir="ltr">Polymarket</a> בזמן אמת.</span></p>
+                <p class="last-updated" role="status">
+                    <span id="initial-status">טוענים את הנתונים…</span>
+                    <time id="last-updated" hidden></time>
+                </p>
+                <div class="update-controls">
+                    <p class="next-update"><span id="countdown-label">מעדכנים נתונים…</span> <bdi id="countdown" role="timer" aria-label="זמן עד לעדכון הבא" hidden></bdi></p>
+                    <button class="refresh" id="refresh" type="button" disabled>
+                        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M6.1 6.1A8 8 0 0 1 20 12M4 12a8 8 0 0 0 13.9 5.9"/></svg>
+                        <span id="refresh-label">מעדכנים…</span>
+                    </button>
+                </div>
+                <p class="update-error" id="update-error" role="status" hidden></p>
+            </aside>
+            <section id="odds-panel" aria-labelledby="odds-title" aria-busy="true">
+                <h1 id="odds-title">מי יושבע לראש הממשלה הבא?</h1>
+                <ol class="candidates" id="candidates"></ol>
+                <div class="feedback">
+                    <span class="loading" id="loading" role="status" aria-label="טוענים את הסיכויים"></span>
+                </div>
+            </section>
         </main>
     </body>
 </html>
