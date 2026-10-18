@@ -12,6 +12,8 @@ each market's `image` URL, falling back to its `icon` URL. Known candidate names
 are displayed in Hebrew; new names from the event are still included. There is no
 server-side fetch, generated data file, or deployment schedule.
 
+The page automatically follows the device's light or dark color-scheme preference.
+
 ## Local development
 
 No packages or build step are required. Serve `docs/` over HTTP:
