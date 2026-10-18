@@ -8,6 +8,10 @@
     --button-border-color: #d8e0d5;
     --button-hover-background: #eef3e9;
     --focus-color: #339b76;
+    --muted-color: #52665c;
+    --card-background: #fff;
+    --card-shadow: 0 8px 28px #172d2908;
+    --error-color: #906014;
     font-family: Arial, "Noto Sans Hebrew", sans-serif;
     color: var(--text-color);
     background: var(--page-background);
@@ -24,6 +28,10 @@
         --button-border-color: #496355;
         --button-hover-background: #21392d;
         --focus-color: #80d5ae;
+        --muted-color: #a5b9ac;
+        --card-background: #18251f;
+        --card-shadow: 0 8px 28px #00000014;
+        --error-color: #e8bc75;
     }
 }
 
@@ -31,6 +39,24 @@
 body { margin: 0; }
 [hidden] { display: none !important; }
 .page { max-width: 680px; margin: 48px auto; padding: 0 24px; }
+.updates { margin-bottom: 36px; padding: 22px 24px 18px; border: 1px solid var(--divider-color); border-radius: 20px; background: var(--card-background); box-shadow: var(--card-shadow); }
+.source-note { display: flex; align-items: baseline; gap: 10px; margin: 0; font-size: 15px; line-height: 1.7; }
+.source-note a { color: var(--accent-color); font-weight: 700; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.source-note a:hover { text-decoration: none; }
+.status-dot { flex: 0 0 7px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent-color); box-shadow: 0 0 0 4px var(--button-hover-background); }
+.updates[data-state="loading"] .status-dot { background: var(--muted-color); }
+.updates[data-state="error"] .status-dot { background: var(--error-color); }
+.last-updated { margin: 6px 17px 18px 0; color: var(--muted-color); font-size: 13px; line-height: 1.6; font-variant-numeric: tabular-nums; }
+.update-controls { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding-top: 16px; border-top: 1px solid var(--divider-color); }
+.next-update { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0; color: var(--muted-color); font-size: 13px; line-height: 1.6; }
+#countdown { min-width: 46px; padding: 3px 7px; border-radius: 6px; background: var(--button-hover-background); color: var(--accent-color); direction: ltr; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
+.refresh { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; padding: 10px 14px; border: 1px solid var(--button-border-color); border-radius: 10px; background: var(--card-background); color: var(--accent-color); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; transition: background-color .15s; }
+.refresh:hover:not(:disabled) { background: var(--button-hover-background); }
+.refresh:disabled { cursor: wait; color: var(--muted-color); }
+.refresh svg { width: 17px; height: 17px; flex-shrink: 0; }
+.refresh:disabled svg { animation: spin 1s linear infinite; }
+.update-error { margin: 16px 0 0; color: var(--error-color); font-size: 13px; line-height: 1.6; }
+h1 { margin: 0 0 14px; font-size: clamp(26px, 5vw, 34px); line-height: 1.35; letter-spacing: -.7px; text-wrap: balance; }
 .candidates { list-style: none; margin: 0; padding: 0; }
 .candidate {
     display: grid;
@@ -47,18 +73,17 @@ body { margin: 0; }
 .probability { direction: ltr; font-size: 32px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.8px; }
 .feedback { display: flex; justify-content: center; }
 .loading { width: 24px; height: 24px; margin: 24px; border: 2px solid var(--divider-color); border-top-color: var(--accent-color); border-radius: 50%; animation: spin 1s linear infinite; }
-button { display: grid; place-items: center; width: 40px; height: 40px; margin: 24px; padding: 8px; border: 1px solid var(--button-border-color); border-radius: 50%; background: transparent; color: var(--accent-color); cursor: pointer; }
-button:hover { background: var(--button-hover-background); }
-button svg { width: 22px; height: 22px; }
 :focus-visible { outline: 3px solid var(--focus-color); outline-offset: 4px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 @media (prefers-reduced-motion: reduce) {
-    .loading { animation: none; }
+    .loading, .refresh:disabled svg { animation: none; }
+    .refresh { transition: none; }
 }
 
 @media (max-width: 540px) {
     .page { margin: 24px auto; padding: 0 20px; }
+    .updates { margin-bottom: 28px; padding: 18px 16px 16px; border-radius: 16px; }
     .candidate { grid-template-columns: 56px minmax(0, 1fr) auto; gap: 14px; padding: 20px 0; }
     .portrait { width: 56px; height: 56px; }
     .candidate-name { font-size: 18px; }

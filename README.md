@@ -7,7 +7,14 @@ cutoff is applied before display rounding.
 
 The browser fetches the [Gamma API event](https://gamma-api.polymarket.com/events/slug/who-will-be-the-next-prime-minister-of-israel-after-the-next-election)
 directly on page load, every minute, and when the page becomes visible again.
-The page displays only candidate portraits, names, and percentages. Portraits use
+The Hebrew status card links to Polymarket, shows the last successful pull time in
+the visitor's local time (today, yesterday, or a full date), and counts down to the
+next pull. “עדכון עכשיו” fetches immediately and restarts the one-minute countdown
+after the request finishes. Concurrent requests are prevented, and failed pulls
+retain the previous data and timestamp with a visible error message.
+
+Under the heading “מי יושבע לראש הממשלה הבא?”, the page displays candidate
+portraits, names, and percentages. Portraits use
 each market's `image` URL, falling back to its `icon` URL. Known candidate names
 are displayed in Hebrew; new names from the event are still included. There is no
 server-side fetch, generated data file, or deployment schedule.
@@ -25,7 +32,7 @@ python3 -m http.server 8000 --bind 127.0.0.1 --directory docs
 The browser needs HTTPS access to `gamma-api.polymarket.com` and the API must allow
 cross-origin requests from the site. Portraits load directly from the image hosts
 in the API response. No API key is required. Loading uses a spinner; failed
-requests show a retry icon and retain any previously loaded odds. Missing or
+requests can be retried with the refresh button. Missing or
 failed portraits leave a neutral placeholder without hiding the candidate.
 
 Deploy `docs/` through the existing GitHub Pages setup. All candidate data is loaded

@@ -25,10 +25,40 @@ const names = new Map(Object.entries({
 const panel = document.querySelector('#odds-panel');
 const list = document.querySelector('#candidates');
 const loadingIndicator = document.querySelector('#loading');
-const retry = document.querySelector('#retry');
+const updates = document.querySelector('#updates');
+const refresh = document.querySelector('#refresh');
+const refreshLabel = document.querySelector('#refresh-label');
+const initialStatus = document.querySelector('#initial-status');
+const lastUpdated = document.querySelector('#last-updated');
+const countdownLabel = document.querySelector('#countdown-label');
+const countdown = document.querySelector('#countdown');
+const updateError = document.querySelector('#update-error');
 const percent = new Intl.NumberFormat('he-IL', { style: 'percent', maximumFractionDigits: 4 });
+const timeFormat = new Intl.DateTimeFormat('he-IL', { hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' });
+const dateFormat = new Intl.DateTimeFormat('he-IL', { day: 'numeric', month: 'long', year: 'numeric' });
 let loading = false;
 let timer;
+let lastFetchedAt;
+let nextRefreshAt;
+
+function updateTimestamp() {
+    if (!lastFetchedAt) return;
+    const now = new Date();
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    const day = lastFetchedAt.toDateString() === now.toDateString() ? 'היום'
+        : lastFetchedAt.toDateString() === yesterday.toDateString() ? 'אתמול'
+        : `ב־${dateFormat.format(lastFetchedAt)}`;
+    const text = `עודכן ${day} ב־${timeFormat.format(lastFetchedAt)}`;
+    if (lastUpdated.textContent !== text) lastUpdated.textContent = text;
+}
+
+function updateCountdown() {
+    updateTimestamp();
+    if (loading || !nextRefreshAt) return;
+    const seconds = Math.max(0, Math.ceil((nextRefreshAt - Date.now()) / 1000));
+    countdown.textContent = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+}
 
 function render(candidates) {
     const rows = document.createDocumentFragment();
@@ -69,7 +99,14 @@ async function loadOdds() {
     if (loading) return;
     loading = true;
     clearTimeout(timer);
-    retry.hidden = true;
+    nextRefreshAt = null;
+    updates.dataset.state = 'loading';
+    refresh.disabled = true;
+    refreshLabel.textContent = 'מעדכנים…';
+    countdownLabel.textContent = 'מעדכנים נתונים…';
+    countdown.hidden = true;
+    updateError.hidden = true;
+    if (!lastFetchedAt) initialStatus.textContent = 'טוענים את הנתונים…';
     loadingIndicator.hidden = list.childElementCount > 0;
     panel.setAttribute('aria-busy', 'true');
     const controller = new AbortController();
@@ -79,22 +116,38 @@ async function loadOdds() {
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const candidates = getCandidates(await response.json());
         render(candidates);
+        lastFetchedAt = new Date();
+        lastUpdated.dateTime = lastFetchedAt.toISOString();
+        lastUpdated.title = `${dateFormat.format(lastFetchedAt)}, ${timeFormat.format(lastFetchedAt)}`;
+        updateTimestamp();
+        initialStatus.hidden = true;
+        lastUpdated.hidden = false;
+        updates.dataset.state = 'success';
     } catch {
-        retry.setAttribute('aria-label', list.childElementCount
-            ? 'העדכון נכשל. מוצגים הסיכויים מהעדכון הקודם. נסו שוב'
-            : 'טעינת הסיכויים נכשלה. נסו שוב');
-        retry.hidden = false;
+        updates.dataset.state = 'error';
+        if (!lastFetchedAt) initialStatus.textContent = 'עדיין אין עדכון';
+        updateError.textContent = lastFetchedAt
+            ? 'העדכון לא הצליח. בינתיים מוצגים הנתונים הקודמים.'
+            : 'לא הצלחנו לטעון את הנתונים. אפשר לנסות שוב.';
+        updateError.hidden = false;
     } finally {
         clearTimeout(timeout);
         loading = false;
         loadingIndicator.hidden = true;
         panel.setAttribute('aria-busy', 'false');
+        refresh.disabled = false;
+        refreshLabel.textContent = 'עדכון עכשיו';
+        countdownLabel.textContent = 'העדכון הבא בעוד';
+        nextRefreshAt = Date.now() + REFRESH_MS;
+        countdown.hidden = false;
+        updateCountdown();
         timer = setTimeout(loadOdds, REFRESH_MS);
     }
 }
 
-retry.addEventListener('click', loadOdds);
+refresh.addEventListener('click', loadOdds);
 document.addEventListener('visibilitychange', () => {
     if (!document.hidden) loadOdds();
 });
+setInterval(updateCountdown, 1000);
 loadOdds();
