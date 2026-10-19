@@ -60,13 +60,12 @@ h1, h2 { margin: 0 0 14px; font-size: clamp(26px, 5vw, 34px); line-height: 1.35;
 .heading-end { white-space: nowrap; }
 .market-link { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; border-radius: 8px; font-size: 24px; line-height: 1; vertical-align: middle; text-decoration: none; }
 .market-link:hover { background: var(--button-hover-background); }
-.election-schedule { margin-bottom: 36px; padding-bottom: 36px; border-bottom: 1px solid var(--divider-color); }
-.market-note { margin: 0 0 20px; color: var(--muted-color); font-size: 14px; line-height: 1.7; }
-.schedule-outcomes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin: 0; }
-.schedule-outcome { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 20px; border: 1px solid var(--divider-color); border-radius: 14px; background: var(--card-background); }
-.schedule-outcome dt { font-size: 20px; font-weight: 600; }
-.schedule-outcome dd { margin: 0; }
-.schedule-outcome:first-child .probability { color: var(--accent-color); }
+.election-summary { margin-bottom: 36px; padding-bottom: 36px; border-bottom: 1px solid var(--divider-color); }
+.election-outcomes { display: grid; gap: 12px; margin: 0; }
+.election-outcome { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 16px; padding: 16px 20px; border: 1px solid var(--divider-color); border-radius: 14px; background: var(--card-background); }
+.election-outcome dt { font-size: 20px; font-weight: 600; line-height: 1.5; }
+.election-outcome dd { margin: 0; color: var(--accent-color); }
+.outcome-date { display: block; color: var(--muted-color); font-size: 14px; font-weight: 400; line-height: 1.7; }
 .candidates { list-style: none; margin: 0; padding: 0; }
 .candidate {
     display: grid;
@@ -94,8 +93,9 @@ h1, h2 { margin: 0 0 14px; font-size: clamp(26px, 5vw, 34px); line-height: 1.35;
 @media (max-width: 540px) {
     .page { margin: 24px auto; padding: 0 20px; }
     .updates { margin-bottom: 28px; padding: 18px 16px 16px; border-radius: 16px; }
-    .election-schedule { margin-bottom: 28px; padding-bottom: 28px; }
-    .schedule-outcome { padding: 16px; }
+    .election-summary { margin-bottom: 28px; padding-bottom: 28px; }
+    .election-outcome { gap: 14px; padding: 16px; }
+    .election-outcome dt { font-size: 18px; }
     .candidate { grid-template-columns: 56px minmax(0, 1fr) auto; gap: 14px; padding: 20px 0; }
     .portrait { width: 56px; height: 56px; }
     .candidate-name { font-size: 18px; }

@@ -46,25 +46,32 @@
                 </div>
                 <p class="update-error" id="update-error" role="status" hidden></p>
             </aside>
-            <section class="election-schedule" id="schedule-panel" aria-labelledby="schedule-title" aria-busy="true">
-                <h2 id="schedule-title">האם הבחירות יערכו <span class="heading-end">במועדן? <a class="market-link" href="https://polymarket.com/event/will-israel-election-happen-as-scheduled-20260720204824362" aria-label="שוק קיום הבחירות במועדן בפולימרקט" title="שוק קיום הבחירות במועדן בפולימרקט">📊</a></span></h2>
-                <p class="market-note">הבחירות לכנסת ב־<time datetime="2026-10-27">27 באוקטובר 2026</time></p>
-                <dl class="schedule-outcomes" id="schedule-outcomes" hidden>
-                    <div class="schedule-outcome">
-                        <dt>כן</dt>
-                        <dd class="probability" id="schedule-yes"></dd>
+            <section class="election-summary" id="election-panel" aria-labelledby="election-title" aria-busy="true">
+                <h2 id="election-title">הבחירות</h2>
+                <dl class="election-outcomes" id="election-outcomes" hidden>
+                    <div class="election-outcome">
+                        <dt>יערכו <span class="heading-end">במועדן <a class="market-link" href="https://polymarket.com/event/will-israel-election-happen-as-scheduled-20260720204824362" aria-label="שוק קיום הבחירות במועדן בפולימרקט" title="שוק קיום הבחירות במועדן בפולימרקט">📊</a></span><time class="outcome-date" datetime="2026-10-27">27 באוקטובר 2026</time></dt>
+                        <dd class="probability" id="election-on-schedule"></dd>
                     </div>
-                    <div class="schedule-outcome">
-                        <dt>לא</dt>
-                        <dd class="probability" id="schedule-no"></dd>
+                    <div class="election-outcome">
+                        <dt>ממשלה חדשה לפני <span class="heading-end"><bdi>2027</bdi> <a class="market-link" href="https://polymarket.com/event/vote-of-confidence-passes-in-knesset-by-december-31" aria-label="שוק ממשלה חדשה לפני 2027 בפולימרקט" title="שוק ממשלה חדשה לפני 2027 בפולימרקט">📊</a></span></dt>
+                        <dd class="probability" id="election-government-before-2027"></dd>
+                    </div>
+                    <div class="election-outcome">
+                        <dt>ממשלה חדשה ללא בחירות <span class="heading-end">נוספות <a class="market-link" href="https://polymarket.com/event/israeli-election-results-in-a-hung-parliament" aria-label="שוק ממשלה חדשה ללא בחירות נוספות בפולימרקט" title="שוק ממשלה חדשה ללא בחירות נוספות בפולימרקט">📊</a></span></dt>
+                        <dd class="probability" id="election-government-without-another-election"></dd>
+                    </div>
+                    <div class="election-outcome">
+                        <dt>הולכים שוב <span class="heading-end">לבחירות <a class="market-link" href="https://polymarket.com/event/israeli-election-results-in-a-hung-parliament" aria-label="שוק בחירות נוספות בפולימרקט" title="שוק בחירות נוספות בפולימרקט">📊</a></span></dt>
+                        <dd class="probability" id="election-another-election"></dd>
                     </div>
                 </dl>
                 <div class="feedback">
-                    <span class="loading" id="schedule-loading" role="status" aria-label="טוענים את הסיכויים לקיום הבחירות במועדן"></span>
+                    <span class="loading" id="election-loading" role="status" aria-label="טוענים את נתוני הבחירות"></span>
                 </div>
             </section>
             <section id="odds-panel" aria-labelledby="odds-title" aria-busy="true">
-                <h1 id="odds-title">מי יושבע לראש הממשלה <span class="heading-end">הבא? <a class="market-link" href="https://polymarket.com/event/who-will-be-the-next-prime-minister-of-israel-after-the-next-election" aria-label="שוק ראש הממשלה הבא בפולימרקט" title="שוק ראש הממשלה הבא בפולימרקט">📊</a></span></h1>
+                <h1 id="odds-title">ראש הממשלה <span class="heading-end">הבא <a class="market-link" href="https://polymarket.com/event/who-will-be-the-next-prime-minister-of-israel-after-the-next-election" aria-label="שוק ראש הממשלה הבא בפולימרקט" title="שוק ראש הממשלה הבא בפולימרקט">📊</a></span></h1>
                 <ol class="candidates" id="candidates"></ol>
                 <div class="feedback">
                     <span class="loading" id="loading" role="status" aria-label="טוענים את הסיכויים"></span>
