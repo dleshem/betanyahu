@@ -71,10 +71,23 @@
                 </div>
             </section>
             <section id="odds-panel" aria-labelledby="odds-title" aria-busy="true">
-                <h1 id="odds-title">ראש הממשלה <span class="heading-end">הבא <a class="market-link" href="https://polymarket.com/event/who-will-be-the-next-prime-minister-of-israel-after-the-next-election" aria-label="שוק ראש הממשלה הבא בפולימרקט" title="שוק ראש הממשלה הבא בפולימרקט">📊</a></span></h1>
-                <ol class="candidates" id="candidates"></ol>
-                <div class="feedback">
-                    <span class="loading" id="loading" role="status" aria-label="טוענים את הסיכויים"></span>
+                <h1 id="odds-title"><span id="role-title">ראש הממשלה</span> <span class="heading-end">הבא <a class="market-link" id="role-source" href="https://polymarket.com/event/who-will-be-the-next-prime-minister-of-israel-after-the-next-election" aria-label="שוק ראש הממשלה הבא בפולימרקט" title="שוק ראש הממשלה הבא בפולימרקט">📊</a></span></h1>
+                <div class="role-chooser">
+                    <label for="role-select">בחרו תפקיד</label>
+                    <div class="role-select-control">
+                        <select id="role-select" aria-controls="role-results" disabled>
+                            <option value="who-will-be-the-next-prime-minister-of-israel-after-the-next-election">ראש הממשלה</option>
+                        </select>
+                        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                    </div>
+                </div>
+                <p class="visually-hidden" id="role-status" role="status"></p>
+                <div id="role-results">
+                    <ol class="candidates" id="candidates"></ol>
+                    <p class="empty-state" id="empty-state" hidden>אין כרגע תוצאות מעל 1% לתפקיד הזה.</p>
+                    <div class="feedback">
+                        <span class="loading" id="loading" role="status" aria-label="טוענים את הסיכויים"></span>
+                    </div>
                 </div>
             </section>
         </main>
