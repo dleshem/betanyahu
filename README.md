@@ -60,15 +60,15 @@ original prices. The configured order stays fixed as live prices change.
 Just below the update banner, “הבחירות” shows “יערכו במועדן” with the October 27,
 2026 date and the **Yes** price from [the election timing market](https://polymarket.com/event/will-israel-election-happen-as-scheduled-20260720204824362).
 
-The next section, “תוצאות”, shows four probabilities, each with a 📊 link to
+The next section, “הכרעה”, shows four probabilities, each with a 📊 link to
 its source market:
 
 | Label | Market outcome |
 | --- | --- |
-| ממשלה חדשה עד 31 לדצמבר 2026 | **Yes** from [the confidence vote market](https://polymarket.com/event/vote-of-confidence-passes-in-knesset-by-december-31) |
-| ממשלה חדשה עד 28 לפברואר 2027 | **No** from the “No Next Minister by Feb 28” outcome in [the defense minister event](https://polymarket.com/event/next-israeli-minister-of-defense) |
-| ממשלה חדשה עד 30 ליוני 2027 | **No** from [the hung parliament market](https://polymarket.com/event/israeli-election-results-in-a-hung-parliament) |
-| נתקענו, הולכים שוב לבחירות | **Yes** from [the hung parliament market](https://polymarket.com/event/israeli-election-results-in-a-hung-parliament) |
+| עד 31 לדצמבר 2026 | **Yes** from [the confidence vote market](https://polymarket.com/event/vote-of-confidence-passes-in-knesset-by-december-31) |
+| עד 28 לפברואר 2027 | **No** from the “No Next Minister by Feb 28” outcome in [the defense minister event](https://polymarket.com/event/next-israeli-minister-of-defense) |
+| עד 30 ליוני 2027 | **No** from [the hung parliament market](https://polymarket.com/event/israeli-election-results-in-a-hung-parliament) |
+| אין, הולכים שוב לבחירות | **Yes** from [the hung parliament market](https://polymarket.com/event/israeli-election-results-in-a-hung-parliament) |
 
 Each price comes directly from the named outcome, without calculating it from
 another price or renormalizing the four probabilities.
