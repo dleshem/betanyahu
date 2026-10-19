@@ -15,8 +15,8 @@ default:
 | שר הפנים | [Interior](https://polymarket.com/event/next-israeli-minister-of-interior) |
 
 All seven lists are loaded into memory together, so changing roles updates the
-📊 source link and results immediately without fetching. The section title stays
-“הממשלה הבאה”. The PM choice reads “ראש הממשלה”; minister choices include
+📊 source link beside the dropdown and results immediately without fetching.
+The section title stays “הממשלה הבאה”. The PM choice reads “ראש הממשלה”; minister choices include
 “(עד 28 לפברואר 2027)”. The selection stays in place during refreshes. Minister
 lists omit the no-appointment outcome. Every remaining active outcome above 1%
 is ranked by its raw **Yes** price; the 1% cutoff is applied before display
@@ -28,7 +28,8 @@ ordered by increasing seats from left to right. The height is the raw **Yes**
 price on a shared 0–100% scale. All brackets are shown, including those at or
 below 1%. Bar labels round to one decimal place; tapping a bar or selecting it
 with the keyboard shows its probability with up to four decimal places. The 📊
-link follows the selected party. Party and role choices are independent and
+link sits beside the dropdown and follows the selected party. The chart starts
+with the histogram, without repeating the party name or source link. Party and role choices are independent and
 stay selected through refreshes; switching either uses cached data.
 
 The party chooser has a fixed order based on approximate expected seats from the
@@ -59,15 +60,15 @@ original prices. The configured order stays fixed as live prices change.
 Just below the update banner, “הבחירות” shows “יערכו במועדן” with the October 27,
 2026 date and the **Yes** price from [the election timing market](https://polymarket.com/event/will-israel-election-happen-as-scheduled-20260720204824362).
 
-The next section, “ממשלה חדשה”, shows four probabilities, each with a 📊 link to
+The next section, “תוצאות”, shows four probabilities, each with a 📊 link to
 its source market:
 
 | Label | Market outcome |
 | --- | --- |
-| עד 31 לדצמבר 2026 | **Yes** from [the confidence vote market](https://polymarket.com/event/vote-of-confidence-passes-in-knesset-by-december-31) |
-| עד 28 לפברואר 2027 | **No** from the “No Next Minister by Feb 28” outcome in [the defense minister event](https://polymarket.com/event/next-israeli-minister-of-defense) |
-| עד 30 ליוני 2027 | **No** from [the hung parliament market](https://polymarket.com/event/israeli-election-results-in-a-hung-parliament) |
-| אין, בחירות חוזרות! | **Yes** from [the hung parliament market](https://polymarket.com/event/israeli-election-results-in-a-hung-parliament) |
+| ממשלה חדשה עד 31 לדצמבר 2026 | **Yes** from [the confidence vote market](https://polymarket.com/event/vote-of-confidence-passes-in-knesset-by-december-31) |
+| ממשלה חדשה עד 28 לפברואר 2027 | **No** from the “No Next Minister by Feb 28” outcome in [the defense minister event](https://polymarket.com/event/next-israeli-minister-of-defense) |
+| ממשלה חדשה עד 30 ליוני 2027 | **No** from [the hung parliament market](https://polymarket.com/event/israeli-election-results-in-a-hung-parliament) |
+| נתקענו, הולכים שוב לבחירות | **Yes** from [the hung parliament market](https://polymarket.com/event/israeli-election-results-in-a-hung-parliament) |
 
 Each price comes directly from the named outcome, without calculating it from
 another price or renormalizing the four probabilities.
