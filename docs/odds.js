@@ -1,6 +1,7 @@
 import { API_URL, ROLE_MARKETS, PARTY_MARKETS, DEFAULT_PARTY_SLUG, getRoleCandidates, getElectionOutcomes, getGovernmentOutcomes, getPartyDistributions } from './polymarket.mjs';
 
 const REFRESH_MS = 60_000;
+const SPREADS_KEY = 'show-spreads';
 const names = new Map(Object.entries({
     "Benjamin Netanyahu": "בנימין נתניהו",
     "Bibi Netanyahu": "בנימין נתניהו",
@@ -93,6 +94,7 @@ const lastUpdated = document.querySelector('#last-updated');
 const countdownLabel = document.querySelector('#countdown-label');
 const countdown = document.querySelector('#countdown');
 const updateError = document.querySelector('#update-error');
+const spreadToggle = document.querySelector('#spread-toggle');
 const percent = new Intl.NumberFormat('he-IL', { style: 'percent', maximumFractionDigits: 4 });
 const chartPercent = new Intl.NumberFormat('he-IL', { style: 'percent', maximumFractionDigits: 1 });
 const timeFormat = new Intl.DateTimeFormat('he-IL', { hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' });
@@ -141,6 +143,52 @@ function updateCountdown() {
     countdown.textContent = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
 }
 
+function describeRange(range) {
+    if (range.combined) {
+        return `טווח משוער משני שווקים: בין ${chartPercent.format(range.low)} ל־${chartPercent.format(range.high)}`;
+    }
+    return `מרווח קנייה–מכירה: הקונים מציעים ${chartPercent.format(range.low)}, המוכרים מבקשים ${chartPercent.format(range.high)}`;
+}
+
+// 0 for a gap of one point (the minimum tick) or less, 1 for ten points or more, on a log scale.
+function spreadLevel(range) {
+    const gap = Math.max(range.high - range.low, 0.01);
+    return Math.min(1, Math.log10(gap / 0.01));
+}
+
+// The full bid–ask spread, named with the Hebrew finance term to avoid the ± of a poll's margin of error,
+// which this is not.
+function formatRange(range) {
+    return `מרווח ${chartPercent.format(range.high - range.low)}`;
+}
+
+function createSpread(range) {
+    const element = document.createElement('bdi');
+    element.className = 'spread';
+    element.dir = 'rtl';
+    element.title = describeRange(range);
+    element.style.setProperty('--spread-level', String(spreadLevel(range)));
+    // Screen readers get the full description; the compact spread is for sighted readers.
+    const description = document.createElement('span');
+    description.className = 'visually-hidden';
+    description.textContent = describeRange(range);
+    const value = document.createElement('span');
+    value.setAttribute('aria-hidden', 'true');
+    value.textContent = formatRange(range);
+    element.append(description, value);
+    return element;
+}
+
+function renderProbability(element, { probability, range }) {
+    if (!range) {
+        element.textContent = percent.format(probability);
+        return;
+    }
+    const rangeElement = createSpread(range);
+    rangeElement.classList.add('probability-range');
+    element.replaceChildren(percent.format(probability), rangeElement);
+}
+
 function render(candidates) {
     const rows = document.createDocumentFragment();
     candidates.forEach(candidate => {
@@ -168,7 +216,7 @@ function render(candidates) {
 
         const probability = document.createElement('span');
         probability.className = 'probability';
-        probability.textContent = percent.format(candidate.probability);
+        renderProbability(probability, candidate);
 
         row.append(portrait, name, probability);
         rows.append(row);
@@ -214,7 +262,11 @@ function selectSeatBin(index) {
     const value = document.createElement('bdi');
     value.dir = 'ltr';
     value.textContent = percent.format(bin.probability);
-    seatDetail.replaceChildren(`${seatRangeDescription(bin)} · `, value, ' סיכוי');
+    const details = [`${seatRangeDescription(bin)} · `, value, ' סיכוי'];
+    if (bin.range) {
+        details.push(' ', createSpread(bin.range));
+    }
+    seatDetail.replaceChildren(...details);
 }
 
 function renderSelectedParty() {
@@ -232,6 +284,11 @@ function renderSelectedParty() {
         button.className = 'seat-bin';
         button.style.setProperty('--probability', String(bin.probability));
         const label = `${seatRangeDescription(bin)}: ${percent.format(bin.probability)}`;
+        if (bin.range) {
+            button.style.setProperty('--range-low', String(bin.range.low));
+            button.style.setProperty('--range-high', String(bin.range.high));
+            button.style.setProperty('--spread-level', String(spreadLevel(bin.range)));
+        }
         button.setAttribute('aria-label', label);
         button.title = label;
         const track = document.createElement('span');
@@ -243,6 +300,11 @@ function renderSelectedParty() {
         const bar = document.createElement('span');
         bar.className = 'seat-bar';
         track.append(probability, bar);
+        if (bin.range) {
+            const whisker = document.createElement('span');
+            whisker.className = 'seat-range-whisker';
+            track.append(whisker);
+        }
         const range = document.createElement('bdi');
         range.className = 'seat-range';
         range.textContent = bin.label;
@@ -300,11 +362,11 @@ async function loadOdds() {
         roleSelect.disabled = false;
         partySelect.disabled = false;
         Object.entries(electionValues).forEach(([key, element]) => {
-            element.textContent = percent.format(election[key]);
+            renderProbability(element, election[key]);
         });
         electionOutcomes.hidden = false;
         Object.entries(governmentValues).forEach(([key, element]) => {
-            element.textContent = percent.format(government[key]);
+            renderProbability(element, government[key]);
         });
         governmentOutcomes.hidden = false;
         lastFetchedAt = new Date();
@@ -355,6 +417,23 @@ partySelect.addEventListener('change', () => {
     selectedParty = party;
     selectedSeatRange = undefined;
     renderSelectedParty();
+});
+function showSpreads(show) {
+    document.documentElement.toggleAttribute('data-show-spreads', show);
+}
+try {
+    spreadToggle.checked = localStorage.getItem(SPREADS_KEY) === 'true';
+} catch {
+    // Without storage the spreads simply start hidden.
+}
+showSpreads(spreadToggle.checked);
+spreadToggle.addEventListener('change', () => {
+    showSpreads(spreadToggle.checked);
+    try {
+        localStorage.setItem(SPREADS_KEY, String(spreadToggle.checked));
+    } catch {
+        // The choice still applies for this visit.
+    }
 });
 refresh.addEventListener('click', loadOdds);
 document.addEventListener('visibilitychange', () => {

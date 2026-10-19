@@ -78,6 +78,14 @@ and 38%.
 The February deadline value is read directly by market slug from the already-fetched
 defense event, independently of the role list's 1% cutoff.
 
+A footer switch, “הצגת מרווח הקנייה–מכירה בכל נתון”, is off by default and
+remembered in `localStorage`. When on, each figure shows a “מרווח” pill with its
+market's bid–ask spread (`bestAsk` − `bestBid` from the same Gamma response),
+shaded from green (1 point or less) to red (10 points or more), and seat bars
+show the range as error bars. Hovering a pill shows the exact bid and ask; for
+the two period differences in “הכרעה”, which combine both markets' ranges, it
+shows the combined bounds.
+
 The browser fetches all 22 events in a single HTTP request to the
 [Gamma `/events` endpoint](https://gamma-api.polymarket.com/events) with repeated
 `slug` query parameters and `limit=50`, on page load, every minute, and when the page becomes
