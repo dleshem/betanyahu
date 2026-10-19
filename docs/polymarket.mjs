@@ -8,12 +8,33 @@ export const ROLE_MARKETS = [
     { slug: 'next-israeli-minister-of-national-security', label: 'השר לביטחון לאומי' },
     { slug: 'next-israeli-minister-of-interior', label: 'שר הפנים' },
 ];
+// Fixed by approximate expected seats from the 2026-10-19 market snapshot.
+// The midpoint/tail assumptions and snapshot values are documented in README.md.
+export const PARTY_MARKETS = [
+    { slug: 'israel-election-yashar-of-seats', label: 'ישר!' },
+    { slug: 'israel-election-likud-of-seats', label: 'הליכוד' },
+    { slug: 'israel-election-together-of-seats', label: 'ביחד' },
+    { slug: 'israel-election-dems-of-seats', label: 'הדמוקרטים' },
+    { slug: 'israel-election-yisrael-beiteinu-of-seats', label: 'ישראל ביתנו' },
+    { slug: 'israel-election-joint-list-of-seats', label: 'הרשימה המשותפת' },
+    { slug: 'israel-election-otzma-of-seats', label: 'עוצמה יהודית' },
+    { slug: 'israel-election-shas-of-seats', label: 'ש״ס' },
+    { slug: 'israel-election-utj-of-seats', label: 'יהדות התורה' },
+    { slug: 'israel-election-rzp-zehut-of-seats', label: 'הציונות הדתית–זהות' },
+    { slug: 'israel-election-raam-of-seats', label: 'רע״ם' },
+    { slug: 'israel-election-amcha-yisrael-of-seats', label: 'עמך ישראל' },
+];
+export const DEFAULT_PARTY_SLUG = 'israel-election-yashar-of-seats';
 export const SCHEDULE_SLUG = 'will-israel-election-happen-as-scheduled-20260720204824362';
 export const CONFIDENCE_SLUG = 'vote-of-confidence-passes-in-knesset-by-december-31';
 export const HUNG_PARLIAMENT_SLUG = 'israeli-election-results-in-a-hung-parliament';
 export const API_URL = `https://gamma-api.polymarket.com/events?${new URLSearchParams([
-    ...ROLE_MARKETS.map(role => role.slug), SCHEDULE_SLUG, CONFIDENCE_SLUG, HUNG_PARLIAMENT_SLUG,
-].map(slug => ['slug', slug]))}`;
+    ['limit', '50'],
+    ...[
+        ...ROLE_MARKETS.map(role => role.slug), ...PARTY_MARKETS.map(party => party.slug),
+        SCHEDULE_SLUG, CONFIDENCE_SLUG, HUNG_PARLIAMENT_SLUG,
+    ].map(slug => ['slug', slug]),
+])}`;
 
 function asArray(value) {
     const result = typeof value === 'string' ? JSON.parse(value) : value;
@@ -108,5 +129,56 @@ export function getRoleCandidates(events) {
     return new Map(ROLE_MARKETS.map(role => [
         role.slug,
         getCandidates(events.find(event => event?.slug === role.slug)),
+    ]));
+}
+
+function getSeatRange(value) {
+    if (typeof value !== 'string') throw new Error('Missing seat range');
+    const label = value.trim();
+    let min, max;
+    let match;
+    if ((match = label.match(/^<(\d+)$/))) {
+        min = 0;
+        max = Number(match[1]) - 1;
+    } else if ((match = label.match(/^(\d+)[-–](\d+)$/))) {
+        min = Number(match[1]);
+        max = Number(match[2]);
+    } else if ((match = label.match(/^(\d+)\+$/))) {
+        min = Number(match[1]);
+        max = 120;
+    } else if ((match = label.match(/^(\d+)$/))) {
+        min = max = Number(match[1]);
+    } else {
+        throw new Error('Invalid seat range');
+    }
+    if (min < 0 || max > 120 || min > max) throw new Error('Seat range is out of bounds');
+    return { label: label.replace('-', '–'), min, max };
+}
+
+export function getSeatBins(event) {
+    if (!event || !Array.isArray(event.markets) || !event.markets.length) throw new Error('Event has no seat markets');
+    if (event.closed || event.active === false) throw new Error('Seat event is no longer active');
+    const bins = [];
+    for (const market of event.markets) {
+        if (!market || typeof market !== 'object') throw new Error('Invalid seat market');
+        if (market.closed || market.archived || market.active === false) continue;
+        const range = getSeatRange(market.groupItemTitle);
+        const { yes: probability } = getBinaryProbabilities(market);
+        // Keep every seat bracket, including probabilities at or below 1%.
+        bins.push({ ...range, probability });
+    }
+    if (!bins.length) throw new Error('No active seat markets');
+    bins.sort((a, b) => a.min - b.min || a.max - b.max);
+    if (bins.some((bin, index) => index > 0 && bin.min <= bins[index - 1].max)) {
+        throw new Error('Seat ranges overlap');
+    }
+    return bins;
+}
+
+export function getPartyDistributions(events) {
+    if (!Array.isArray(events)) throw new Error('Expected an array of events');
+    return new Map(PARTY_MARKETS.map(party => [
+        party.slug,
+        getSeatBins(events.find(event => event?.slug === party.slug)),
     ]));
 }
