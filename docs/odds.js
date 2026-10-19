@@ -66,8 +66,6 @@ const emptyState = document.querySelector('#empty-state');
 const partyPanel = document.querySelector('#party-panel');
 const partySelect = document.querySelector('#party-select');
 const partyResults = document.querySelector('#party-results');
-const partyNamePrefix = document.querySelector('#party-name-prefix');
-const partyNameEnd = document.querySelector('#party-name-end');
 const partySource = document.querySelector('#party-source');
 const partyLoading = document.querySelector('#party-loading');
 const seatBars = document.querySelector('#seat-bars');
@@ -222,9 +220,7 @@ function selectSeatBin(index) {
 function renderSelectedParty() {
     const bins = partyDistributions.get(selectedParty.slug);
     if (!bins) return;
-    const words = selectedParty.label.split(' ');
-    partyNameEnd.textContent = words.pop();
-    partyNamePrefix.textContent = words.length ? `${words.join(' ')} ` : '';
+    partyResults.setAttribute('aria-label', `התפלגות המנדטים של ${selectedParty.label}`);
     partySource.href = `https://polymarket.com/event/${selectedParty.slug}`;
     const sourceLabel = `שוק המנדטים של ${selectedParty.label} בפולימרקט`;
     partySource.setAttribute('aria-label', sourceLabel);
