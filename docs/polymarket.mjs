@@ -66,30 +66,65 @@ function getBinaryProbabilities(market) {
     return probabilities;
 }
 
-function getEventProbabilities(events, slug, marketSlug = slug) {
+function getQuotePrice(value, fallback) {
+    if (value === undefined || value === null || String(value).trim() === '') return fallback;
+    const price = Number(value);
+    return Number.isFinite(price) && price >= 0 && price <= 1 ? price : undefined;
+}
+
+// The Yes bid–ask range, mirrored for No. Gamma quotes bestBid/bestAsk on the first token, which is
+// Yes in every market this page reads. An empty side of the book stretches the range to 0 or 1.
+// A missing or invalid quote yields no range rather than hiding the price.
+function getRange(market, outcome) {
+    const bid = getQuotePrice(market.bestBid, 0);
+    const ask = getQuotePrice(market.bestAsk, 1);
+    if (bid === undefined || ask === undefined || bid > ask) return undefined;
+    return outcome === 'no' ? { low: 1 - ask, high: 1 - bid } : { low: bid, high: ask };
+}
+
+function getOutcome(market, outcome) {
+    const range = getRange(market, outcome);
+    return { probability: getBinaryProbabilities(market)[outcome], ...(range ? { range } : {}) };
+}
+
+// The odds of a period between two deadlines. Its range spans every combination of the two bid–ask ranges.
+function getDifference(later, earlier) {
+    const probability = Math.max(0, later.probability - earlier.probability);
+    if (!later.range || !earlier.range) return { probability };
+    return {
+        probability,
+        range: {
+            low: Math.max(0, later.range.low - earlier.range.high),
+            high: Math.max(0, later.range.high - earlier.range.low),
+            combined: true,
+        },
+    };
+}
+
+function getEventMarket(events, slug, marketSlug = slug) {
     const event = events.find(event => event?.slug === slug);
     const market = Array.isArray(event?.markets) ? event.markets.find(market => market?.slug === marketSlug) : undefined;
     if (!market || market.archived || market.active === false) throw new Error(`Market is unavailable: ${marketSlug}`);
-    return getBinaryProbabilities(market);
+    return market;
 }
 
 export function getElectionOutcomes(events) {
     if (!Array.isArray(events)) throw new Error('Expected an array of events');
-    const schedule = getEventProbabilities(events, SCHEDULE_SLUG);
-    return { onSchedule: schedule.yes };
+    const schedule = getEventMarket(events, SCHEDULE_SLUG);
+    return { onSchedule: getOutcome(schedule, 'yes') };
 }
 
 export function getGovernmentOutcomes(events) {
     if (!Array.isArray(events)) throw new Error('Expected an array of events');
-    const confidence = getEventProbabilities(events, CONFIDENCE_SLUG);
-    const noDefenseAppointment = getEventProbabilities(events, DEFENSE_SLUG, DEFENSE_NO_APPOINTMENT_SLUG);
-    const hungParliament = getEventProbabilities(events, HUNG_PARLIAMENT_SLUG);
+    const confidence = getEventMarket(events, CONFIDENCE_SLUG);
+    const noDefenseAppointment = getEventMarket(events, DEFENSE_SLUG, DEFENSE_NO_APPOINTMENT_SLUG);
+    const hungParliament = getEventMarket(events, HUNG_PARLIAMENT_SLUG);
     return {
-        novemberDecember2026: confidence.yes,
+        novemberDecember2026: getOutcome(confidence, 'yes'),
         // Independently priced deadlines can disagree; a period cannot have negative odds.
-        januaryFebruary2027: Math.max(0, noDefenseAppointment.no - confidence.yes),
-        marchJune2027: Math.max(0, hungParliament.no - noDefenseAppointment.no),
-        anotherElection: hungParliament.yes,
+        januaryFebruary2027: getDifference(getOutcome(noDefenseAppointment, 'no'), getOutcome(confidence, 'yes')),
+        marchJune2027: getDifference(getOutcome(hungParliament, 'no'), getOutcome(noDefenseAppointment, 'no')),
+        anotherElection: getOutcome(hungParliament, 'yes'),
     };
 }
 
@@ -120,9 +155,9 @@ export function getCandidates(event, { omitNoAppointment = false } = {}) {
             /^no (?:next minister|one)\b/i.test(String(market.groupItemTitle || '').trim())
         )) continue;
 
-        const { yes: probability } = getBinaryProbabilities(market);
+        const outcome = getOutcome(market, 'yes');
         // Apply the threshold to the original probability, before formatting.
-        if (probability <= 0.01) continue;
+        if (outcome.probability <= 0.01) continue;
 
         let name = market.groupItemTitle;
         if (typeof name !== 'string' || !name.trim()) {
@@ -132,7 +167,7 @@ export function getCandidates(event, { omitNoAppointment = false } = {}) {
         }
         if (!name) throw new Error('Missing candidate name');
         const image = getImage(market);
-        candidates.push({ name: name.trim(), probability, ...(image ? { image } : {}) });
+        candidates.push({ name: name.trim(), ...outcome, ...(image ? { image } : {}) });
     }
     // These are independent market prices; do not renormalize them to 100%.
     return candidates.sort((a, b) => b.probability - a.probability || a.name.localeCompare(b.name));
@@ -179,9 +214,8 @@ export function getSeatBins(event) {
         if (!market || typeof market !== 'object') throw new Error('Invalid seat market');
         if (market.closed || market.archived || market.active === false) continue;
         const range = getSeatRange(market.groupItemTitle);
-        const { yes: probability } = getBinaryProbabilities(market);
         // Keep every seat bracket, including probabilities at or below 1%.
-        bins.push({ ...range, probability });
+        bins.push({ ...range, ...getOutcome(market, 'yes') });
     }
     if (!bins.length) throw new Error('No active seat markets');
     bins.sort((a, b) => a.min - b.min || a.max - b.max);
