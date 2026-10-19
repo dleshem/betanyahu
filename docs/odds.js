@@ -1,4 +1,4 @@
-import { API_URL, ROLE_MARKETS, PARTY_MARKETS, DEFAULT_PARTY_SLUG, getRoleCandidates, getElectionOutcomes, getPartyDistributions } from './polymarket.mjs';
+import { API_URL, ROLE_MARKETS, PARTY_MARKETS, DEFAULT_PARTY_SLUG, getRoleCandidates, getElectionOutcomes, getGovernmentOutcomes, getPartyDistributions } from './polymarket.mjs';
 
 const REFRESH_MS = 60_000;
 const names = new Map(Object.entries({
@@ -77,11 +77,17 @@ const electionPanel = document.querySelector('#election-panel');
 const electionOutcomes = document.querySelector('#election-outcomes');
 const electionValues = {
     onSchedule: document.querySelector('#election-on-schedule'),
-    governmentBefore2027: document.querySelector('#election-government-before-2027'),
-    governmentWithoutAnotherElection: document.querySelector('#election-government-without-another-election'),
-    anotherElection: document.querySelector('#election-another-election'),
 };
 const electionLoading = document.querySelector('#election-loading');
+const governmentPanel = document.querySelector('#government-panel');
+const governmentOutcomes = document.querySelector('#government-outcomes');
+const governmentValues = {
+    byDecember2026: document.querySelector('#government-by-december-2026'),
+    byFebruary2027: document.querySelector('#government-by-february-2027'),
+    byJune2027: document.querySelector('#government-by-june-2027'),
+    anotherElection: document.querySelector('#government-another-election'),
+};
+const governmentLoading = document.querySelector('#government-loading');
 const updates = document.querySelector('#updates');
 const refresh = document.querySelector('#refresh');
 const refreshLabel = document.querySelector('#refresh-label');
@@ -268,9 +274,11 @@ async function loadOdds() {
     if (!lastFetchedAt) initialStatus.textContent = 'טוענים את הנתונים…';
     loadingIndicator.hidden = roleCandidates.has(selectedRole.slug);
     electionLoading.hidden = !electionOutcomes.hidden;
+    governmentLoading.hidden = !governmentOutcomes.hidden;
     partyLoading.hidden = partyDistributions.has(selectedParty.slug);
     panel.setAttribute('aria-busy', 'true');
     electionPanel.setAttribute('aria-busy', 'true');
+    governmentPanel.setAttribute('aria-busy', 'true');
     partyPanel.setAttribute('aria-busy', 'true');
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15_000);
@@ -281,6 +289,7 @@ async function loadOdds() {
         if (!Array.isArray(events)) throw new Error('Expected an array of events');
         const candidatesByRole = getRoleCandidates(events);
         const election = getElectionOutcomes(events);
+        const government = getGovernmentOutcomes(events);
         const distributions = getPartyDistributions(events);
         roleCandidates = candidatesByRole;
         partyDistributions = distributions;
@@ -292,6 +301,10 @@ async function loadOdds() {
             element.textContent = percent.format(election[key]);
         });
         electionOutcomes.hidden = false;
+        Object.entries(governmentValues).forEach(([key, element]) => {
+            element.textContent = percent.format(government[key]);
+        });
+        governmentOutcomes.hidden = false;
         lastFetchedAt = new Date();
         lastUpdated.dateTime = lastFetchedAt.toISOString();
         lastUpdated.title = `${dateFormat.format(lastFetchedAt)}, ${timeFormat.format(lastFetchedAt)}`;
@@ -312,9 +325,11 @@ async function loadOdds() {
         loading = false;
         loadingIndicator.hidden = true;
         electionLoading.hidden = true;
+        governmentLoading.hidden = true;
         partyLoading.hidden = true;
         panel.setAttribute('aria-busy', 'false');
         electionPanel.setAttribute('aria-busy', 'false');
+        governmentPanel.setAttribute('aria-busy', 'false');
         partyPanel.setAttribute('aria-busy', 'false');
         refresh.disabled = false;
         refreshLabel.textContent = 'עדכון עכשיו';
