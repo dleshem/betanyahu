@@ -1,9 +1,38 @@
 export const API_URL = 'https://gamma-api.polymarket.com/events/slug/who-will-be-the-next-prime-minister-of-israel-after-the-next-election';
+export const SCHEDULE_SLUG = 'will-israel-election-happen-as-scheduled-20260720204824362';
+export const SCHEDULE_API_URL = `https://gamma-api.polymarket.com/events/slug/${SCHEDULE_SLUG}`;
 
 function asArray(value) {
     const result = typeof value === 'string' ? JSON.parse(value) : value;
     if (!Array.isArray(result)) throw new Error('Expected an array');
     return result;
+}
+
+function getBinaryProbabilities(market) {
+    const outcomes = asArray(market.outcomes).map(outcome => String(outcome).trim().toLowerCase());
+    const prices = asArray(market.outcomePrices);
+    if (outcomes.length !== 2 || !outcomes.includes('yes') || !outcomes.includes('no') || prices.length !== outcomes.length) {
+        throw new Error('Expected matching Yes/No outcomes and prices');
+    }
+    const probabilities = {};
+    outcomes.forEach((outcome, index) => {
+        const price = prices[index];
+        if ((typeof price !== 'number' && typeof price !== 'string') || String(price).trim() === '') {
+            throw new Error(`Missing ${outcome} price`);
+        }
+        const probability = Number(price);
+        if (!Number.isFinite(probability) || probability < 0 || probability > 1) {
+            throw new Error(`Invalid ${outcome} price`);
+        }
+        probabilities[outcome] = probability;
+    });
+    return probabilities;
+}
+
+export function getElectionSchedule(event) {
+    const market = event?.markets?.find(market => market?.slug === SCHEDULE_SLUG);
+    if (!market || market.archived || market.active === false) throw new Error('Election schedule market is unavailable');
+    return getBinaryProbabilities(market);
 }
 
 function getImage(market) {
@@ -29,20 +58,7 @@ export function getCandidates(event) {
         if (!market || typeof market !== 'object') throw new Error('Invalid market');
         if (market.closed || market.archived || market.active === false) continue;
 
-        const outcomes = asArray(market.outcomes).map(outcome => String(outcome).trim().toLowerCase());
-        const prices = asArray(market.outcomePrices);
-        const yesIndex = outcomes.indexOf('yes');
-        if (outcomes.length !== 2 || !outcomes.includes('no') || yesIndex < 0 || prices.length !== outcomes.length) {
-            throw new Error('Expected matching Yes/No outcomes and prices');
-        }
-        const price = prices[yesIndex];
-        if ((typeof price !== 'number' && typeof price !== 'string') || String(price).trim() === '') {
-            throw new Error('Missing Yes price');
-        }
-        const probability = Number(price);
-        if (!Number.isFinite(probability) || probability < 0 || probability > 1) {
-            throw new Error('Invalid Yes price');
-        }
+        const { yes: probability } = getBinaryProbabilities(market);
         // Apply the threshold to the original probability, before formatting.
         if (probability <= 0.01) continue;
 

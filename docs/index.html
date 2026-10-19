@@ -46,6 +46,23 @@
                 </div>
                 <p class="update-error" id="update-error" role="status" hidden></p>
             </aside>
+            <section class="election-schedule" id="schedule-panel" aria-labelledby="schedule-title" aria-busy="true">
+                <h2 id="schedule-title">האם הבחירות יערכו במועדן?</h2>
+                <p class="market-note">הבחירות לכנסת ב־<time datetime="2026-10-27">27 באוקטובר 2026</time> · <a href="https://polymarket.com/event/will-israel-election-happen-as-scheduled-20260720204824362">לשוק ב־<bdi>Polymarket</bdi></a></p>
+                <dl class="schedule-outcomes" id="schedule-outcomes" hidden>
+                    <div class="schedule-outcome">
+                        <dt>כן</dt>
+                        <dd class="probability" id="schedule-yes"></dd>
+                    </div>
+                    <div class="schedule-outcome">
+                        <dt>לא</dt>
+                        <dd class="probability" id="schedule-no"></dd>
+                    </div>
+                </dl>
+                <div class="feedback">
+                    <span class="loading" id="schedule-loading" role="status" aria-label="טוענים את הסיכויים לקיום הבחירות במועדן"></span>
+                </div>
+            </section>
             <section id="odds-panel" aria-labelledby="odds-title" aria-busy="true">
                 <h1 id="odds-title">מי יושבע לראש הממשלה הבא?</h1>
                 <ol class="candidates" id="candidates"></ol>

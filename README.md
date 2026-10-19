@@ -5,13 +5,22 @@ candidate above 1% in [this Polymarket event](https://polymarket.com/event/who-w
 ranked by the price of their **Yes** outcome. Prices are not renormalized; the 1%
 cutoff is applied before display rounding.
 
-The browser fetches the [Gamma API event](https://gamma-api.polymarket.com/events/slug/who-will-be-the-next-prime-minister-of-israel-after-the-next-election)
+Just below the update banner, “האם הבחירות יערכו במועדן?” shows the **Yes** and
+**No** prices from [the election timing market](https://polymarket.com/event/will-israel-election-happen-as-scheduled-20260720204824362).
+That market asks whether nationwide voting for the 26th Knesset takes place on
+October 27, 2026. Both outcome prices come directly from the market; neither is
+calculated from the other.
+
+The browser fetches both [the candidate Gamma API event](https://gamma-api.polymarket.com/events/slug/who-will-be-the-next-prime-minister-of-israel-after-the-next-election)
+and [the election timing event](https://gamma-api.polymarket.com/events/slug/will-israel-election-happen-as-scheduled-20260720204824362)
 directly on page load, every minute, and when the page becomes visible again.
 The Hebrew status card links to Polymarket, shows the last successful pull time in
 the visitor's local time (today, yesterday, or a full date), and counts down to the
 next pull. “עדכון עכשיו” fetches immediately and restarts the one-minute countdown
 after the request finishes. Concurrent requests are prevented, and failed pulls
-retain the previous data and timestamp with a visible error message.
+retain the previous data and timestamp with a visible error message. Both events
+must load and validate before either section updates, keeping the shared timestamp
+accurate.
 
 Under the heading “מי יושבע לראש הממשלה הבא?”, the page displays candidate
 portraits, names, and percentages. Portraits use
