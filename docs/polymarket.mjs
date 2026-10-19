@@ -85,9 +85,10 @@ export function getGovernmentOutcomes(events) {
     const noDefenseAppointment = getEventProbabilities(events, DEFENSE_SLUG, DEFENSE_NO_APPOINTMENT_SLUG);
     const hungParliament = getEventProbabilities(events, HUNG_PARLIAMENT_SLUG);
     return {
-        byDecember2026: confidence.yes,
-        byFebruary2027: noDefenseAppointment.no,
-        byJune2027: hungParliament.no,
+        novemberDecember2026: confidence.yes,
+        // Independently priced deadlines can disagree; a period cannot have negative odds.
+        januaryFebruary2027: Math.max(0, noDefenseAppointment.no - confidence.yes),
+        marchJune2027: Math.max(0, hungParliament.no - noDefenseAppointment.no),
         anotherElection: hungParliament.yes,
     };
 }

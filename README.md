@@ -60,19 +60,22 @@ original prices. The configured order stays fixed as live prices change.
 Just below the update banner, “הבחירות” shows “יערכו במועדן” with the October 27,
 2026 date and the **Yes** price from [the election timing market](https://polymarket.com/event/will-israel-election-happen-as-scheduled-20260720204824362).
 
-The next section, “הכרעה”, shows four probabilities, each with a 📊 link to
-its source market:
+The next section, “הכרעה”, shows non-cumulative probabilities for each period,
+plus the probability of another election. Each row has a 📊 source link:
 
 | Label | Market outcome |
 | --- | --- |
-| עד 31 לדצמבר 2026 | **Yes** from [the confidence vote market](https://polymarket.com/event/vote-of-confidence-passes-in-knesset-by-december-31) |
-| עד 28 לפברואר 2027 | **No** from the “No Next Minister by Feb 28” outcome in [the defense minister event](https://polymarket.com/event/next-israeli-minister-of-defense) |
-| עד 30 ליוני 2027 | **No** from [the hung parliament market](https://polymarket.com/event/israeli-election-results-in-a-hung-parliament) |
-| אין, הולכים שוב לבחירות | **Yes** from [the hung parliament market](https://polymarket.com/event/israeli-election-results-in-a-hung-parliament) |
+| נובמבר-דצמבר 2026 | **Yes** from [the confidence vote market](https://polymarket.com/event/vote-of-confidence-passes-in-knesset-by-december-31) |
+| ינואר-פברואר 2027 | **No** from the “No Next Minister by Feb 28” outcome in [the defense minister event](https://polymarket.com/event/next-israeli-minister-of-defense), minus the confidence vote **Yes** price |
+| מרץ-יוני 2027 | **No** from [the hung parliament market](https://polymarket.com/event/israeli-election-results-in-a-hung-parliament), minus the defense market's “No Next Minister by Feb 28” **No** price |
+| הולכים שוב לבחירות | **Yes** from [the hung parliament market](https://polymarket.com/event/israeli-election-results-in-a-hung-parliament) |
 
-Each price comes directly from the named outcome, without calculating it from
-another price or renormalizing the four probabilities.
-The February value is read directly by market slug from the already-fetched
+Period differences use the original prices before display rounding. Since these
+deadlines are priced in separate markets, any negative difference is displayed as
+zero; the four values are not renormalized. For example, cumulative deadline odds
+of 48%, 59.1%, and 62% with a 38% repeat-election price display as 48%, 11.1%, 2.9%,
+and 38%.
+The February deadline value is read directly by market slug from the already-fetched
 defense event, independently of the role list's 1% cutoff.
 
 The browser fetches all 22 events in a single HTTP request to the
@@ -105,6 +108,8 @@ No packages or build step are required. Serve `docs/` over HTTP:
 ```sh
 python3 -m http.server 8000 --bind 127.0.0.1 --directory docs
 ```
+
+Run the government period calculation tests with `node --test`.
 
 The browser needs HTTPS access to `gamma-api.polymarket.com` and the API must allow
 cross-origin requests from the site. Portraits load directly from the image hosts
