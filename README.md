@@ -32,8 +32,20 @@ link sits beside the dropdown and follows the selected party. The chart starts
 with the histogram, without repeating the party name or source link. Party and role choices are independent and
 stay selected through refreshes; switching either uses cached data.
 
-The party chooser has a fixed order based on approximate expected seats from the
-2026-10-19 14:27:24 UTC market snapshot:
+“המילואימניקים–הכלכלית החדשה” appears immediately before “עמך ישראל” and uses
+estimated seat brackets derived from
+[its vote-share market](https://polymarket.com/event/israel-election-reservistsnew-economic-party-vote-share).
+It uses the same seat axis and chart styling as the other parties. Vote shares
+below the 3.25% electoral threshold map to zero seats; qualifying shares are
+multiplied by 120 / 100 and rounded to the nearest seat. Upper bracket boundaries
+are excluded. Overlapping estimated seat brackets are merged and their **Yes**
+prices added, without renormalizing or splitting probabilities within a bracket.
+For the current market this produces 0, 4, and 5+ seat brackets. Bar details mark
+the result as an estimate. The approximation ignores discarded votes and surplus
+vote agreements; the 📊 link continues to open the underlying vote-share market.
+
+The original twelve parties retain their fixed order based on approximate expected
+seats from the 2026-10-19 14:27:24 UTC market snapshot:
 
 | Party | Approximate seats used for ordering | Polymarket event |
 | --- | --- | --- |
@@ -48,6 +60,7 @@ The party chooser has a fixed order based on approximate expected seats from the
 | יהדות התורה | 7.41 | [UTJ](https://polymarket.com/event/israel-election-utj-of-seats) |
 | הציונות הדתית–זהות | 5.78 | [RZP-Zehut](https://polymarket.com/event/israel-election-rzp-zehut-of-seats) |
 | רע״ם | 5.50 | [Raam](https://polymarket.com/event/israel-election-raam-of-seats) |
+| המילואימניקים–הכלכלית החדשה | Requested position; estimated seats | [Reservists–New Economic Party](https://polymarket.com/event/israel-election-reservistsnew-economic-party-vote-share) |
 | עמך ישראל | 3.08 | [Amcha Yisrael](https://polymarket.com/event/israel-election-amcha-yisrael-of-seats) |
 
 For this ordering estimate, closed ranges use their midpoints; each open-ended
@@ -78,7 +91,7 @@ and 38%.
 The February deadline value is read directly by market slug from the already-fetched
 defense event, independently of the role list's 1% cutoff.
 
-The browser fetches all 22 events in a single HTTP request to the
+The browser fetches all 23 events in a single HTTP request to the
 [Gamma `/events` endpoint](https://gamma-api.polymarket.com/events) with repeated
 `slug` query parameters and `limit=50`, on page load, every minute, and when the page becomes
 visible again. Events are matched by slug, regardless of response order.
@@ -98,7 +111,7 @@ server-side fetch, generated data file, or deployment schedule.
 
 The page automatically follows the device's light or dark color-scheme preference.
 The dropdowns retain accessible names without visible labels. Long role choices
-wrap within the native select control. The footer credits Danny Leshem, links his
+and party names wrap within the native select controls. The footer credits Danny Leshem, links his
 name to https://dannyleshem.com, and links “github” to the source repository.
 
 ## Local development
