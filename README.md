@@ -109,8 +109,6 @@ No packages or build step are required. Serve `docs/` over HTTP:
 python3 -m http.server 8000 --bind 127.0.0.1 --directory docs
 ```
 
-Run the government period calculation tests with `node --test`.
-
 The browser needs HTTPS access to `gamma-api.polymarket.com` and the API must allow
 cross-origin requests from the site. Portraits load directly from the image hosts
 in the API response. No API key is required. Loading uses a spinner; failed
