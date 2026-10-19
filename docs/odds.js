@@ -1,4 +1,4 @@
-import { API_URL, getCandidates } from './polymarket.mjs';
+import { API_URL, SCHEDULE_API_URL, getCandidates, getElectionSchedule } from './polymarket.mjs';
 
 const REFRESH_MS = 60_000;
 const names = new Map(Object.entries({
@@ -25,6 +25,11 @@ const names = new Map(Object.entries({
 const panel = document.querySelector('#odds-panel');
 const list = document.querySelector('#candidates');
 const loadingIndicator = document.querySelector('#loading');
+const schedulePanel = document.querySelector('#schedule-panel');
+const scheduleOutcomes = document.querySelector('#schedule-outcomes');
+const scheduleYes = document.querySelector('#schedule-yes');
+const scheduleNo = document.querySelector('#schedule-no');
+const scheduleLoading = document.querySelector('#schedule-loading');
 const updates = document.querySelector('#updates');
 const refresh = document.querySelector('#refresh');
 const refreshLabel = document.querySelector('#refresh-label');
@@ -108,14 +113,23 @@ async function loadOdds() {
     updateError.hidden = true;
     if (!lastFetchedAt) initialStatus.textContent = 'טוענים את הנתונים…';
     loadingIndicator.hidden = list.childElementCount > 0;
+    scheduleLoading.hidden = !scheduleOutcomes.hidden;
     panel.setAttribute('aria-busy', 'true');
+    schedulePanel.setAttribute('aria-busy', 'true');
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15_000);
     try {
-        const response = await fetch(API_URL, { cache: 'no-store', signal: controller.signal });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const candidates = getCandidates(await response.json());
+        const [candidateEvent, scheduleEvent] = await Promise.all([API_URL, SCHEDULE_API_URL].map(async url => {
+            const response = await fetch(url, { cache: 'no-store', signal: controller.signal });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            return response.json();
+        }));
+        const candidates = getCandidates(candidateEvent);
+        const schedule = getElectionSchedule(scheduleEvent);
         render(candidates);
+        scheduleYes.textContent = percent.format(schedule.yes);
+        scheduleNo.textContent = percent.format(schedule.no);
+        scheduleOutcomes.hidden = false;
         lastFetchedAt = new Date();
         lastUpdated.dateTime = lastFetchedAt.toISOString();
         lastUpdated.title = `${dateFormat.format(lastFetchedAt)}, ${timeFormat.format(lastFetchedAt)}`;
@@ -124,6 +138,7 @@ async function loadOdds() {
         lastUpdated.hidden = false;
         updates.dataset.state = 'success';
     } catch {
+        controller.abort();
         updates.dataset.state = 'error';
         if (!lastFetchedAt) initialStatus.textContent = 'עדיין אין עדכון';
         updateError.textContent = lastFetchedAt
@@ -134,7 +149,9 @@ async function loadOdds() {
         clearTimeout(timeout);
         loading = false;
         loadingIndicator.hidden = true;
+        scheduleLoading.hidden = true;
         panel.setAttribute('aria-busy', 'false');
+        schedulePanel.setAttribute('aria-busy', 'false');
         refresh.disabled = false;
         refreshLabel.textContent = 'עדכון עכשיו';
         countdownLabel.textContent = 'העדכון הבא בעוד';
