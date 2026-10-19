@@ -1,6 +1,9 @@
-export const API_URL = 'https://gamma-api.polymarket.com/events/slug/who-will-be-the-next-prime-minister-of-israel-after-the-next-election';
+export const CANDIDATES_SLUG = 'who-will-be-the-next-prime-minister-of-israel-after-the-next-election';
 export const SCHEDULE_SLUG = 'will-israel-election-happen-as-scheduled-20260720204824362';
-export const SCHEDULE_API_URL = `https://gamma-api.polymarket.com/events/slug/${SCHEDULE_SLUG}`;
+export const API_URL = `https://gamma-api.polymarket.com/events?${new URLSearchParams([
+    ['slug', CANDIDATES_SLUG],
+    ['slug', SCHEDULE_SLUG],
+])}`;
 
 function asArray(value) {
     const result = typeof value === 'string' ? JSON.parse(value) : value;
