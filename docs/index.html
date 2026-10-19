@@ -32,7 +32,7 @@
     <body>
         <main class="page">
             <aside class="updates" id="updates" aria-label="עדכוני נתונים" data-state="loading">
-                <p class="source-note"><span class="status-dot" aria-hidden="true"></span><span>כל הנתונים כאן מגיעים מ־<a href="https://polymarket.com/event/who-will-be-the-next-prime-minister-of-israel-after-the-next-election" dir="ltr">Polymarket</a> בזמן אמת.</span></p>
+                <p class="source-note"><span class="status-dot" aria-hidden="true"></span><span>כל הנתונים כאן מגיעים <a href="https://polymarket.com/politics/israel-election">מפולימרקט</a> בזמן אמת.</span></p>
                 <p class="last-updated" role="status">
                     <span id="initial-status">טוענים את הנתונים…</span>
                     <time id="last-updated" hidden></time>
@@ -47,8 +47,11 @@
                 <p class="update-error" id="update-error" role="status" hidden></p>
             </aside>
             <section class="election-schedule" id="schedule-panel" aria-labelledby="schedule-title" aria-busy="true">
-                <h2 id="schedule-title">האם הבחירות יערכו במועדן?</h2>
-                <p class="market-note">הבחירות לכנסת ב־<time datetime="2026-10-27">27 באוקטובר 2026</time> · <a href="https://polymarket.com/event/will-israel-election-happen-as-scheduled-20260720204824362">לשוק ב־<bdi>Polymarket</bdi></a></p>
+                <div class="section-heading">
+                    <h2 id="schedule-title">האם הבחירות יערכו במועדן?</h2>
+                    <a class="market-link" href="https://polymarket.com/event/will-israel-election-happen-as-scheduled-20260720204824362" aria-label="שוק קיום הבחירות במועדן בפולימרקט" title="שוק קיום הבחירות במועדן בפולימרקט">📊</a>
+                </div>
+                <p class="market-note">הבחירות לכנסת ב־<time datetime="2026-10-27">27 באוקטובר 2026</time></p>
                 <dl class="schedule-outcomes" id="schedule-outcomes" hidden>
                     <div class="schedule-outcome">
                         <dt>כן</dt>
@@ -64,7 +67,10 @@
                 </div>
             </section>
             <section id="odds-panel" aria-labelledby="odds-title" aria-busy="true">
-                <h1 id="odds-title">מי יושבע לראש הממשלה הבא?</h1>
+                <div class="section-heading">
+                    <h1 id="odds-title">מי יושבע לראש הממשלה הבא?</h1>
+                    <a class="market-link" href="https://polymarket.com/event/who-will-be-the-next-prime-minister-of-israel-after-the-next-election" aria-label="שוק ראש הממשלה הבא בפולימרקט" title="שוק ראש הממשלה הבא בפולימרקט">📊</a>
+                </div>
                 <ol class="candidates" id="candidates"></ol>
                 <div class="feedback">
                     <span class="loading" id="loading" role="status" aria-label="טוענים את הסיכויים"></span>
