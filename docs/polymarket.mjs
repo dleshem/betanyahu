@@ -1,7 +1,9 @@
 export const CANDIDATES_SLUG = 'who-will-be-the-next-prime-minister-of-israel-after-the-next-election';
+export const DEFENSE_SLUG = 'next-israeli-minister-of-defense';
+export const DEFENSE_NO_APPOINTMENT_SLUG = 'will-no-next-israeli-minister-of-defense-be-appointed-by-february-28-2027';
 export const ROLE_MARKETS = [
     { slug: CANDIDATES_SLUG, label: 'ראש הממשלה' },
-    { slug: 'next-israeli-minister-of-defense', label: 'שר הביטחון' },
+    { slug: DEFENSE_SLUG, label: 'שר הביטחון' },
     { slug: 'next-israeli-minister-of-foreign-affairs', label: 'שר החוץ' },
     { slug: 'next-israeli-minister-of-finance', label: 'שר האוצר' },
     { slug: 'next-israeli-minister-of-justice', label: 'שר המשפטים' },
@@ -63,22 +65,28 @@ function getBinaryProbabilities(market) {
     return probabilities;
 }
 
-function getEventProbabilities(events, slug) {
+function getEventProbabilities(events, slug, marketSlug = slug) {
     const event = events.find(event => event?.slug === slug);
-    const market = Array.isArray(event?.markets) ? event.markets.find(market => market?.slug === slug) : undefined;
-    if (!market || market.archived || market.active === false) throw new Error(`Market is unavailable: ${slug}`);
+    const market = Array.isArray(event?.markets) ? event.markets.find(market => market?.slug === marketSlug) : undefined;
+    if (!market || market.archived || market.active === false) throw new Error(`Market is unavailable: ${marketSlug}`);
     return getBinaryProbabilities(market);
 }
 
 export function getElectionOutcomes(events) {
     if (!Array.isArray(events)) throw new Error('Expected an array of events');
     const schedule = getEventProbabilities(events, SCHEDULE_SLUG);
+    return { onSchedule: schedule.yes };
+}
+
+export function getGovernmentOutcomes(events) {
+    if (!Array.isArray(events)) throw new Error('Expected an array of events');
     const confidence = getEventProbabilities(events, CONFIDENCE_SLUG);
+    const noDefenseAppointment = getEventProbabilities(events, DEFENSE_SLUG, DEFENSE_NO_APPOINTMENT_SLUG);
     const hungParliament = getEventProbabilities(events, HUNG_PARLIAMENT_SLUG);
     return {
-        onSchedule: schedule.yes,
-        governmentBefore2027: confidence.yes,
-        governmentWithoutAnotherElection: hungParliament.no,
+        byDecember2026: confidence.yes,
+        byFebruary2027: noDefenseAppointment.no,
+        byJune2027: hungParliament.no,
         anotherElection: hungParliament.yes,
     };
 }
