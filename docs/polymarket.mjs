@@ -11,7 +11,7 @@ export const ROLE_MARKETS = [
     { slug: 'next-israeli-minister-of-national-security', label: `השר לביטחון לאומי${MINISTER_DEADLINE}` },
     { slug: 'next-israeli-minister-of-interior', label: `שר הפנים${MINISTER_DEADLINE}` },
 ];
-// Fixed by approximate expected seats from the 2026-10-19 market snapshot.
+// The original party order follows expected seats from the 2026-10-19 snapshot.
 // The midpoint/tail assumptions and snapshot values are documented in README.md.
 export const PARTY_MARKETS = [
     { slug: 'israel-election-yashar-of-seats', label: 'ישר!' },
@@ -25,6 +25,8 @@ export const PARTY_MARKETS = [
     { slug: 'israel-election-utj-of-seats', label: 'יהדות התורה' },
     { slug: 'israel-election-rzp-zehut-of-seats', label: 'הציונות הדתית–זהות' },
     { slug: 'israel-election-raam-of-seats', label: 'רע״ם' },
+    // Keep this estimated seat market immediately before Amcha Yisrael.
+    { slug: 'israel-election-reservistsnew-economic-party-vote-share', label: 'המילואימניקים–הכלכלית החדשה', estimateSeatsFromVoteShare: true },
     { slug: 'israel-election-amcha-yisrael-of-seats', label: 'עמך ישראל' },
 ];
 export const DEFAULT_PARTY_SLUG = 'israel-election-yashar-of-seats';
@@ -171,30 +173,83 @@ function getSeatRange(value) {
     return { label: label.replace('-', '–'), min, max };
 }
 
-export function getSeatBins(event) {
-    if (!event || !Array.isArray(event.markets) || !event.markets.length) throw new Error('Event has no seat markets');
-    if (event.closed || event.active === false) throw new Error('Seat event is no longer active');
+function getVoteShareRange(value) {
+    if (typeof value !== 'string') throw new Error('Missing vote-share range');
+    const label = value.trim();
+    let min, max;
+    let match;
+    if ((match = label.match(/^<(\d+(?:\.\d+)?)%$/))) {
+        min = 0;
+        max = Number(match[1]);
+    } else if ((match = label.match(/^(\d+(?:\.\d+)?)[-–](\d+(?:\.\d+)?)%$/))) {
+        min = Number(match[1]);
+        max = Number(match[2]);
+    } else if ((match = label.match(/^(\d+(?:\.\d+)?)%\+$/))) {
+        min = Number(match[1]);
+        max = 100;
+    } else {
+        throw new Error('Invalid vote-share range');
+    }
+    if (min < 0 || max > 100 || min >= max) throw new Error('Vote-share range is out of bounds');
+    return { label: label.replace('-', '–'), min, max };
+}
+
+function getBins(event, parseRange, continuousRanges = false) {
+    if (!event || !Array.isArray(event.markets) || !event.markets.length) throw new Error('Event has no party markets');
+    if (event.closed || event.active === false) throw new Error('Party event is no longer active');
     const bins = [];
     for (const market of event.markets) {
-        if (!market || typeof market !== 'object') throw new Error('Invalid seat market');
+        if (!market || typeof market !== 'object') throw new Error('Invalid party market');
         if (market.closed || market.archived || market.active === false) continue;
-        const range = getSeatRange(market.groupItemTitle);
+        const range = parseRange(market.groupItemTitle);
         const { yes: probability } = getBinaryProbabilities(market);
-        // Keep every seat bracket, including probabilities at or below 1%.
+        // Keep every bracket, including probabilities at or below 1%.
         bins.push({ ...range, probability });
     }
-    if (!bins.length) throw new Error('No active seat markets');
+    if (!bins.length) throw new Error('No active party markets');
     bins.sort((a, b) => a.min - b.min || a.max - b.max);
-    if (bins.some((bin, index) => index > 0 && bin.min <= bins[index - 1].max)) {
-        throw new Error('Seat ranges overlap');
+    // Vote-share brackets share boundaries; the boundary belongs to the higher bracket.
+    if (bins.some((bin, index) => index > 0 && (
+        continuousRanges ? bin.min < bins[index - 1].max : bin.min <= bins[index - 1].max
+    ))) {
+        throw new Error('Party ranges overlap');
     }
     return bins;
+}
+
+export function getSeatBins(event) {
+    return getBins(event, getSeatRange);
+}
+
+function getEstimatedSeatBins(event) {
+    const threshold = 3.25;
+    const seatsPerPercent = 120 / 100;
+    const estimates = [];
+    for (const bin of getBins(event, getVoteShareRange, true)) {
+        const min = bin.min < threshold ? 0 : Math.round(bin.min * seatsPerPercent);
+        // The upper vote boundary is excluded, so a rounding boundary belongs to the next bin.
+        const max = bin.max <= threshold ? 0 : Math.ceil(bin.max * seatsPerPercent - 0.5);
+        const previous = estimates.at(-1);
+        if (previous && min <= previous.max) {
+            // Merge overlapping estimates without inventing probabilities within a vote bracket.
+            previous.max = Math.max(previous.max, max);
+            previous.probability += bin.probability;
+        } else {
+            estimates.push({ min, max, probability: bin.probability });
+        }
+    }
+    return estimates.map(bin => ({
+        ...bin,
+        label: bin.min === bin.max ? String(bin.min)
+            : bin.max === 120 ? `${bin.min}+` : `${bin.min}–${bin.max}`,
+    }));
 }
 
 export function getPartyDistributions(events) {
     if (!Array.isArray(events)) throw new Error('Expected an array of events');
     return new Map(PARTY_MARKETS.map(party => [
         party.slug,
-        getSeatBins(events.find(event => event?.slug === party.slug)),
+        (party.estimateSeatsFromVoteShare ? getEstimatedSeatBins : getSeatBins)(
+            events.find(event => event?.slug === party.slug)),
     ]));
 }

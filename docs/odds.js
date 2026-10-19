@@ -65,6 +65,7 @@ const roleStatus = document.querySelector('#role-status');
 const emptyState = document.querySelector('#empty-state');
 const partyPanel = document.querySelector('#party-panel');
 const partySelect = document.querySelector('#party-select');
+const partySelectValue = document.querySelector('#party-select-value');
 const partyResults = document.querySelector('#party-results');
 const partySource = document.querySelector('#party-source');
 const partyLoading = document.querySelector('#party-loading');
@@ -197,7 +198,7 @@ function renderSelectedRole() {
     roleStatus.textContent = `מוצגות ${candidates.length} תוצאות עבור ${selectedRole.label}`;
 }
 
-function seatRangeDescription(bin) {
+function partyRangeDescription(bin) {
     if (bin.label.startsWith('<')) return `פחות מ־${bin.max + 1} מנדטים`;
     if (bin.label.endsWith('+')) return `${bin.min} מנדטים ומעלה`;
     if (bin.min === bin.max) return `${bin.min} מנדטים`;
@@ -214,15 +215,18 @@ function selectSeatBin(index) {
     const value = document.createElement('bdi');
     value.dir = 'ltr';
     value.textContent = percent.format(bin.probability);
-    seatDetail.replaceChildren(`${seatRangeDescription(bin)} · `, value, ' סיכוי');
+    seatDetail.replaceChildren(`${partyRangeDescription(bin)} · `, value,
+        selectedParty.estimateSeatsFromVoteShare ? ' סיכוי (אומדן)' : ' סיכוי');
 }
 
 function renderSelectedParty() {
     const bins = partyDistributions.get(selectedParty.slug);
     if (!bins) return;
+    partySelectValue.textContent = selectedParty.label;
     partyResults.setAttribute('aria-label', `התפלגות המנדטים של ${selectedParty.label}`);
     partySource.href = `https://polymarket.com/event/${selectedParty.slug}`;
-    const sourceLabel = `שוק המנדטים של ${selectedParty.label} בפולימרקט`;
+    const measure = selectedParty.estimateSeatsFromVoteShare ? 'אחוז הקולות' : 'המנדטים';
+    const sourceLabel = `שוק ${measure} של ${selectedParty.label} בפולימרקט`;
     partySource.setAttribute('aria-label', sourceLabel);
     partySource.title = sourceLabel;
     const bars = document.createDocumentFragment();
@@ -231,7 +235,7 @@ function renderSelectedParty() {
         button.type = 'button';
         button.className = 'seat-bin';
         button.style.setProperty('--probability', String(bin.probability));
-        const label = `${seatRangeDescription(bin)}: ${percent.format(bin.probability)}`;
+        const label = `${partyRangeDescription(bin)}: ${percent.format(bin.probability)}`;
         button.setAttribute('aria-label', label);
         button.title = label;
         const track = document.createElement('span');
