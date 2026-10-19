@@ -1,4 +1,4 @@
-import { API_URL, SCHEDULE_API_URL, getCandidates, getElectionSchedule } from './polymarket.mjs';
+import { API_URL, CANDIDATES_SLUG, SCHEDULE_SLUG, getCandidates, getElectionSchedule } from './polymarket.mjs';
 
 const REFRESH_MS = 60_000;
 const names = new Map(Object.entries({
@@ -119,11 +119,12 @@ async function loadOdds() {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15_000);
     try {
-        const [candidateEvent, scheduleEvent] = await Promise.all([API_URL, SCHEDULE_API_URL].map(async url => {
-            const response = await fetch(url, { cache: 'no-store', signal: controller.signal });
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            return response.json();
-        }));
+        const response = await fetch(API_URL, { cache: 'no-store', signal: controller.signal });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const events = await response.json();
+        if (!Array.isArray(events)) throw new Error('Expected an array of events');
+        const candidateEvent = events.find(event => event?.slug === CANDIDATES_SLUG);
+        const scheduleEvent = events.find(event => event?.slug === SCHEDULE_SLUG);
         const candidates = getCandidates(candidateEvent);
         const schedule = getElectionSchedule(scheduleEvent);
         render(candidates);
