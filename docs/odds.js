@@ -53,14 +53,13 @@ const names = new Map(Object.entries({
     "Meirav Cohen": "מירב כהן",
     "Michael Malchieli": "מיכאל מלכיאלי",
     "Yoav Ben-Tzur": "יואב בן צור",
-    "No Next Minister by Feb 28": "ללא מינוי עד 28 בפברואר 2027",
 }));
 
 const panel = document.querySelector('#odds-panel');
 const list = document.querySelector('#candidates');
 const loadingIndicator = document.querySelector('#loading');
 const roleSelect = document.querySelector('#role-select');
-const roleTitle = document.querySelector('#role-title');
+const roleSelectValue = document.querySelector('#role-select-value');
 const roleSource = document.querySelector('#role-source');
 const roleStatus = document.querySelector('#role-status');
 const emptyState = document.querySelector('#empty-state');
@@ -182,15 +181,22 @@ function render(candidates) {
 function renderSelectedRole() {
     const candidates = roleCandidates.get(selectedRole.slug);
     if (!candidates) return;
-    roleTitle.textContent = selectedRole.label;
+    roleSelectValue.textContent = selectedRole.label;
+    const deadlineStart = selectedRole.label.indexOf(' (');
+    if (deadlineStart >= 0) {
+        const deadline = document.createElement('span');
+        deadline.className = 'role-select-deadline';
+        deadline.textContent = selectedRole.label.slice(deadlineStart + 1);
+        roleSelectValue.replaceChildren(selectedRole.label.slice(0, deadlineStart), ' ', deadline);
+    }
     roleSource.href = `https://polymarket.com/event/${selectedRole.slug}`;
-    const sourceLabel = `שוק ${selectedRole.label} הבא בפולימרקט`;
+    const sourceLabel = `שוק ${selectedRole.label} בפולימרקט`;
     roleSource.setAttribute('aria-label', sourceLabel);
     roleSource.title = sourceLabel;
     render(candidates);
     emptyState.hidden = candidates.length > 0;
     loadingIndicator.hidden = true;
-    roleStatus.textContent = `מוצגות ${candidates.length} תוצאות עבור ${selectedRole.label} הבא`;
+    roleStatus.textContent = `מוצגות ${candidates.length} תוצאות עבור ${selectedRole.label}`;
 }
 
 function seatRangeDescription(bin) {
