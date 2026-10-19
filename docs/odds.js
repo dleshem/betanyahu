@@ -1,4 +1,4 @@
-import { API_URL, ROLE_MARKETS, getRoleCandidates, getElectionOutcomes } from './polymarket.mjs';
+import { API_URL, ROLE_MARKETS, PARTY_MARKETS, DEFAULT_PARTY_SLUG, getRoleCandidates, getElectionOutcomes, getPartyDistributions } from './polymarket.mjs';
 
 const REFRESH_MS = 60_000;
 const names = new Map(Object.entries({
@@ -64,6 +64,15 @@ const roleTitle = document.querySelector('#role-title');
 const roleSource = document.querySelector('#role-source');
 const roleStatus = document.querySelector('#role-status');
 const emptyState = document.querySelector('#empty-state');
+const partyPanel = document.querySelector('#party-panel');
+const partySelect = document.querySelector('#party-select');
+const partyResults = document.querySelector('#party-results');
+const partyNamePrefix = document.querySelector('#party-name-prefix');
+const partyNameEnd = document.querySelector('#party-name-end');
+const partySource = document.querySelector('#party-source');
+const partyLoading = document.querySelector('#party-loading');
+const seatBars = document.querySelector('#seat-bars');
+const seatDetail = document.querySelector('#seat-detail');
 const electionPanel = document.querySelector('#election-panel');
 const electionOutcomes = document.querySelector('#election-outcomes');
 const electionValues = {
@@ -82,6 +91,7 @@ const countdownLabel = document.querySelector('#countdown-label');
 const countdown = document.querySelector('#countdown');
 const updateError = document.querySelector('#update-error');
 const percent = new Intl.NumberFormat('he-IL', { style: 'percent', maximumFractionDigits: 4 });
+const chartPercent = new Intl.NumberFormat('he-IL', { style: 'percent', maximumFractionDigits: 1 });
 const timeFormat = new Intl.DateTimeFormat('he-IL', { hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' });
 const dateFormat = new Intl.DateTimeFormat('he-IL', { day: 'numeric', month: 'long', year: 'numeric' });
 let loading = false;
@@ -90,6 +100,9 @@ let lastFetchedAt;
 let nextRefreshAt;
 let selectedRole = ROLE_MARKETS[0];
 let roleCandidates = new Map();
+let selectedParty = PARTY_MARKETS.find(party => party.slug === DEFAULT_PARTY_SLUG);
+let partyDistributions = new Map();
+let selectedSeatRange;
 
 roleSelect.replaceChildren(...ROLE_MARKETS.map(role => {
     const option = document.createElement('option');
@@ -98,6 +111,13 @@ roleSelect.replaceChildren(...ROLE_MARKETS.map(role => {
     return option;
 }));
 roleSelect.value = selectedRole.slug;
+partySelect.replaceChildren(...PARTY_MARKETS.map(party => {
+    const option = document.createElement('option');
+    option.value = party.slug;
+    option.textContent = party.label;
+    return option;
+}));
+partySelect.value = selectedParty.slug;
 
 function updateTimestamp() {
     if (!lastFetchedAt) return;
@@ -167,6 +187,73 @@ function renderSelectedRole() {
     roleStatus.textContent = `מוצגות ${candidates.length} תוצאות עבור ${selectedRole.label} הבא`;
 }
 
+function seatRangeDescription(bin) {
+    if (bin.label.startsWith('<')) return `פחות מ־${bin.max + 1} מנדטים`;
+    if (bin.label.endsWith('+')) return `${bin.min} מנדטים ומעלה`;
+    if (bin.min === bin.max) return `${bin.min} מנדטים`;
+    return `${bin.min} עד ${bin.max} מנדטים`;
+}
+
+function selectSeatBin(index) {
+    const bins = partyDistributions.get(selectedParty.slug);
+    const bin = bins[index];
+    selectedSeatRange = bin.label;
+    [...seatBars.children].forEach((button, buttonIndex) => {
+        button.setAttribute('aria-pressed', String(buttonIndex === index));
+    });
+    const value = document.createElement('bdi');
+    value.dir = 'ltr';
+    value.textContent = percent.format(bin.probability);
+    seatDetail.replaceChildren(`${seatRangeDescription(bin)} · `, value, ' סיכוי');
+}
+
+function renderSelectedParty() {
+    const bins = partyDistributions.get(selectedParty.slug);
+    if (!bins) return;
+    const words = selectedParty.label.split(' ');
+    partyNameEnd.textContent = words.pop();
+    partyNamePrefix.textContent = words.length ? `${words.join(' ')} ` : '';
+    partySource.href = `https://polymarket.com/event/${selectedParty.slug}`;
+    const sourceLabel = `שוק המנדטים של ${selectedParty.label} בפולימרקט`;
+    partySource.setAttribute('aria-label', sourceLabel);
+    partySource.title = sourceLabel;
+    const bars = document.createDocumentFragment();
+    bins.forEach((bin, index) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'seat-bin';
+        button.style.setProperty('--probability', String(bin.probability));
+        const label = `${seatRangeDescription(bin)}: ${percent.format(bin.probability)}`;
+        button.setAttribute('aria-label', label);
+        button.title = label;
+        const track = document.createElement('span');
+        track.className = 'seat-bar-track';
+        track.setAttribute('aria-hidden', 'true');
+        const probability = document.createElement('span');
+        probability.className = 'seat-bar-value';
+        probability.textContent = chartPercent.format(bin.probability);
+        const bar = document.createElement('span');
+        bar.className = 'seat-bar';
+        track.append(probability, bar);
+        const range = document.createElement('bdi');
+        range.className = 'seat-range';
+        range.textContent = bin.label;
+        range.setAttribute('aria-hidden', 'true');
+        button.append(track, range);
+        button.addEventListener('click', () => selectSeatBin(index));
+        bars.append(button);
+    });
+    seatBars.style.gridTemplateColumns = `repeat(${bins.length}, minmax(0, 1fr))`;
+    seatBars.replaceChildren(bars);
+    let selectedIndex = bins.findIndex(bin => bin.label === selectedSeatRange);
+    if (selectedIndex < 0) {
+        selectedIndex = bins.reduce((best, bin, index) => bin.probability > bins[best].probability ? index : best, 0);
+    }
+    selectSeatBin(selectedIndex);
+    partyResults.hidden = false;
+    partyLoading.hidden = true;
+}
+
 async function loadOdds() {
     if (loading) return;
     loading = true;
@@ -181,8 +268,10 @@ async function loadOdds() {
     if (!lastFetchedAt) initialStatus.textContent = 'טוענים את הנתונים…';
     loadingIndicator.hidden = roleCandidates.has(selectedRole.slug);
     electionLoading.hidden = !electionOutcomes.hidden;
+    partyLoading.hidden = partyDistributions.has(selectedParty.slug);
     panel.setAttribute('aria-busy', 'true');
     electionPanel.setAttribute('aria-busy', 'true');
+    partyPanel.setAttribute('aria-busy', 'true');
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15_000);
     try {
@@ -192,9 +281,13 @@ async function loadOdds() {
         if (!Array.isArray(events)) throw new Error('Expected an array of events');
         const candidatesByRole = getRoleCandidates(events);
         const election = getElectionOutcomes(events);
+        const distributions = getPartyDistributions(events);
         roleCandidates = candidatesByRole;
+        partyDistributions = distributions;
         renderSelectedRole();
+        renderSelectedParty();
         roleSelect.disabled = false;
+        partySelect.disabled = false;
         Object.entries(electionValues).forEach(([key, element]) => {
             element.textContent = percent.format(election[key]);
         });
@@ -219,8 +312,10 @@ async function loadOdds() {
         loading = false;
         loadingIndicator.hidden = true;
         electionLoading.hidden = true;
+        partyLoading.hidden = true;
         panel.setAttribute('aria-busy', 'false');
         electionPanel.setAttribute('aria-busy', 'false');
+        partyPanel.setAttribute('aria-busy', 'false');
         refresh.disabled = false;
         refreshLabel.textContent = 'עדכון עכשיו';
         countdownLabel.textContent = 'העדכון הבא בעוד';
@@ -236,6 +331,13 @@ roleSelect.addEventListener('change', () => {
     if (!role || !roleCandidates.has(role.slug)) return;
     selectedRole = role;
     renderSelectedRole();
+});
+partySelect.addEventListener('change', () => {
+    const party = PARTY_MARKETS.find(party => party.slug === partySelect.value);
+    if (!party || !partyDistributions.has(party.slug)) return;
+    selectedParty = party;
+    selectedSeatRange = undefined;
+    renderSelectedParty();
 });
 refresh.addEventListener('click', loadOdds);
 document.addEventListener('visibilitychange', () => {

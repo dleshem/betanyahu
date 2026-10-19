@@ -20,6 +20,40 @@ stays in place during refreshes. Every active outcome above 1% is ranked by its
 **Yes** price, including “No Next Minister by Feb 28” where present. Prices are
 not renormalized; the 1% cutoff is applied before display rounding.
 
+The “מפלגות” section adds a matching party dropdown, with Yashar selected by
+default. Each bar represents a full seat-range bracket from the party's market,
+ordered by increasing seats from left to right. The height is the raw **Yes**
+price on a shared 0–100% scale. All brackets are shown, including those at or
+below 1%. Bar labels round to one decimal place; tapping a bar or selecting it
+with the keyboard shows its probability with up to four decimal places. The 📊
+link follows the selected party. Party and role choices are independent and
+stay selected through refreshes; switching either uses cached data.
+
+The party chooser has a fixed order based on approximate expected seats from the
+2026-10-19 14:27:24 UTC market snapshot:
+
+| Party | Approximate seats used for ordering | Polymarket event |
+| --- | --- | --- |
+| ישר! | 23.75 | [Yashar](https://polymarket.com/event/israel-election-yashar-of-seats) |
+| הליכוד | 22.51 | [Likud](https://polymarket.com/event/israel-election-likud-of-seats) |
+| ביחד | 13.69 | [Together](https://polymarket.com/event/israel-election-together-of-seats) |
+| הדמוקרטים | 9.66 | [Dems](https://polymarket.com/event/israel-election-dems-of-seats) |
+| ישראל ביתנו | 8.45 | [Yisrael Beiteinu](https://polymarket.com/event/israel-election-yisrael-beiteinu-of-seats) |
+| הרשימה המשותפת | 8.14 | [Joint List](https://polymarket.com/event/israel-election-joint-list-of-seats) |
+| עוצמה יהודית | 7.88 | [Otzma](https://polymarket.com/event/israel-election-otzma-of-seats) |
+| ש״ס | 7.86 | [Shas](https://polymarket.com/event/israel-election-shas-of-seats) |
+| יהדות התורה | 7.41 | [UTJ](https://polymarket.com/event/israel-election-utj-of-seats) |
+| הציונות הדתית–זהות | 5.78 | [RZP-Zehut](https://polymarket.com/event/israel-election-rzp-zehut-of-seats) |
+| רע״ם | 5.50 | [Raam](https://polymarket.com/event/israel-election-raam-of-seats) |
+| עמך ישראל | 3.08 | [Amcha Yisrael](https://polymarket.com/event/israel-election-amcha-yisrael-of-seats) |
+
+For this ordering estimate, closed ranges use their midpoints; each open-ended
+tail is approximated by a bracket with the neighboring range's width, bounded
+to 0–120 seats. Midpoints are weighted by the Yes prices and divided by their
+sum. These are approximate ordering values because the markets do not specify
+probabilities for individual seats within a bracket. The histogram retains the
+original prices. The configured order stays fixed as live prices change.
+
 Just below the update banner, “הבחירות” shows four probabilities, each with a 📊
 link to its source market:
 
@@ -33,16 +67,16 @@ link to its source market:
 Each price comes directly from the named outcome, without calculating it from
 another price or renormalizing the four probabilities.
 
-The browser fetches all ten events in a single HTTP request to the
+The browser fetches all 22 events in a single HTTP request to the
 [Gamma `/events` endpoint](https://gamma-api.polymarket.com/events) with repeated
-`slug` query parameters, on page load, every minute, and when the page becomes
+`slug` query parameters and `limit=50`, on page load, every minute, and when the page becomes
 visible again. Events are matched by slug, regardless of response order.
 The Hebrew status card links to Polymarket, shows the last successful pull time in
 the visitor's local time (today, yesterday, or a full date), and counts down to the
 next pull. “עדכון עכשיו” fetches immediately and restarts the one-minute countdown
 after the request finishes. Concurrent requests are prevented, and failed pulls
 retain the previous data and timestamp with a visible error message. All events
-must load and validate before either section updates, keeping the shared timestamp
+must load and validate before any section updates, keeping the shared timestamp
 accurate.
 
 Under the selected role's heading, the page displays candidate
