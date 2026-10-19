@@ -1,9 +1,10 @@
 export const CANDIDATES_SLUG = 'who-will-be-the-next-prime-minister-of-israel-after-the-next-election';
 export const SCHEDULE_SLUG = 'will-israel-election-happen-as-scheduled-20260720204824362';
+export const CONFIDENCE_SLUG = 'vote-of-confidence-passes-in-knesset-by-december-31';
+export const HUNG_PARLIAMENT_SLUG = 'israeli-election-results-in-a-hung-parliament';
 export const API_URL = `https://gamma-api.polymarket.com/events?${new URLSearchParams([
-    ['slug', CANDIDATES_SLUG],
-    ['slug', SCHEDULE_SLUG],
-])}`;
+    CANDIDATES_SLUG, SCHEDULE_SLUG, CONFIDENCE_SLUG, HUNG_PARLIAMENT_SLUG,
+].map(slug => ['slug', slug]))}`;
 
 function asArray(value) {
     const result = typeof value === 'string' ? JSON.parse(value) : value;
@@ -32,10 +33,24 @@ function getBinaryProbabilities(market) {
     return probabilities;
 }
 
-export function getElectionSchedule(event) {
-    const market = event?.markets?.find(market => market?.slug === SCHEDULE_SLUG);
-    if (!market || market.archived || market.active === false) throw new Error('Election schedule market is unavailable');
+function getEventProbabilities(events, slug) {
+    const event = events.find(event => event?.slug === slug);
+    const market = Array.isArray(event?.markets) ? event.markets.find(market => market?.slug === slug) : undefined;
+    if (!market || market.archived || market.active === false) throw new Error(`Market is unavailable: ${slug}`);
     return getBinaryProbabilities(market);
+}
+
+export function getElectionOutcomes(events) {
+    if (!Array.isArray(events)) throw new Error('Expected an array of events');
+    const schedule = getEventProbabilities(events, SCHEDULE_SLUG);
+    const confidence = getEventProbabilities(events, CONFIDENCE_SLUG);
+    const hungParliament = getEventProbabilities(events, HUNG_PARLIAMENT_SLUG);
+    return {
+        onSchedule: schedule.yes,
+        governmentBefore2027: confidence.yes,
+        governmentWithoutAnotherElection: hungParliament.no,
+        anotherElection: hungParliament.yes,
+    };
 }
 
 function getImage(market) {
