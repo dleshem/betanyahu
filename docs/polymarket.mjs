@@ -1,9 +1,18 @@
 export const CANDIDATES_SLUG = 'who-will-be-the-next-prime-minister-of-israel-after-the-next-election';
+export const ROLE_MARKETS = [
+    { slug: CANDIDATES_SLUG, label: 'ראש הממשלה' },
+    { slug: 'next-israeli-minister-of-defense', label: 'שר הביטחון' },
+    { slug: 'next-israeli-minister-of-foreign-affairs', label: 'שר החוץ' },
+    { slug: 'next-israeli-minister-of-finance', label: 'שר האוצר' },
+    { slug: 'next-israeli-minister-of-justice', label: 'שר המשפטים' },
+    { slug: 'next-israeli-minister-of-national-security', label: 'השר לביטחון לאומי' },
+    { slug: 'next-israeli-minister-of-interior', label: 'שר הפנים' },
+];
 export const SCHEDULE_SLUG = 'will-israel-election-happen-as-scheduled-20260720204824362';
 export const CONFIDENCE_SLUG = 'vote-of-confidence-passes-in-knesset-by-december-31';
 export const HUNG_PARLIAMENT_SLUG = 'israeli-election-results-in-a-hung-parliament';
 export const API_URL = `https://gamma-api.polymarket.com/events?${new URLSearchParams([
-    CANDIDATES_SLUG, SCHEDULE_SLUG, CONFIDENCE_SLUG, HUNG_PARLIAMENT_SLUG,
+    ...ROLE_MARKETS.map(role => role.slug), SCHEDULE_SLUG, CONFIDENCE_SLUG, HUNG_PARLIAMENT_SLUG,
 ].map(slug => ['slug', slug]))}`;
 
 function asArray(value) {
@@ -83,7 +92,7 @@ export function getCandidates(event) {
         let name = market.groupItemTitle;
         if (typeof name !== 'string' || !name.trim()) {
             name = typeof market.question === 'string'
-                ? market.question.match(/^Will (.+?) (?:be|become) (?:the )?next prime minister/i)?.[1]
+                ? market.question.match(/^Will (.+?) (?:be|become) (?:the )?next (?:prime minister|Israeli Minister of [^?]+)/i)?.[1]
                 : undefined;
         }
         if (!name) throw new Error('Missing candidate name');
@@ -92,4 +101,12 @@ export function getCandidates(event) {
     }
     // These are independent market prices; do not renormalize them to 100%.
     return candidates.sort((a, b) => b.probability - a.probability || a.name.localeCompare(b.name));
+}
+
+export function getRoleCandidates(events) {
+    if (!Array.isArray(events)) throw new Error('Expected an array of events');
+    return new Map(ROLE_MARKETS.map(role => [
+        role.slug,
+        getCandidates(events.find(event => event?.slug === role.slug)),
+    ]));
 }

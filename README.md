@@ -1,9 +1,24 @@
 # betanyahu
 
-A Hebrew, static election-odds page for betanyahu.com. It displays every active
-candidate above 1% in [this Polymarket event](https://polymarket.com/event/who-will-be-the-next-prime-minister-of-israel-after-the-next-election),
-ranked by the price of their **Yes** outcome. Prices are not renormalized; the 1%
-cutoff is applied before display rounding.
+A Hebrew, static election-odds page for betanyahu.com. A native dropdown lets
+visitors choose one role market at a time, with prime minister selected by
+default:
+
+| Role | Polymarket event |
+| --- | --- |
+| ראש הממשלה | [Next PM](https://polymarket.com/event/who-will-be-the-next-prime-minister-of-israel-after-the-next-election) |
+| שר הביטחון | [Defense](https://polymarket.com/event/next-israeli-minister-of-defense) |
+| שר החוץ | [Foreign affairs](https://polymarket.com/event/next-israeli-minister-of-foreign-affairs) |
+| שר האוצר | [Finance](https://polymarket.com/event/next-israeli-minister-of-finance) |
+| שר המשפטים | [Justice](https://polymarket.com/event/next-israeli-minister-of-justice) |
+| השר לביטחון לאומי | [National security](https://polymarket.com/event/next-israeli-minister-of-national-security) |
+| שר הפנים | [Interior](https://polymarket.com/event/next-israeli-minister-of-interior) |
+
+All seven lists are loaded into memory together, so changing roles updates the
+heading, 📊 source link, and results immediately without fetching. The selection
+stays in place during refreshes. Every active outcome above 1% is ranked by its
+**Yes** price, including “No Next Minister by Feb 28” where present. Prices are
+not renormalized; the 1% cutoff is applied before display rounding.
 
 Just below the update banner, “הבחירות” shows four probabilities, each with a 📊
 link to its source market:
@@ -18,7 +33,7 @@ link to its source market:
 Each price comes directly from the named outcome, without calculating it from
 another price or renormalizing the four probabilities.
 
-The browser fetches all four events in a single HTTP request to the
+The browser fetches all ten events in a single HTTP request to the
 [Gamma `/events` endpoint](https://gamma-api.polymarket.com/events) with repeated
 `slug` query parameters, on page load, every minute, and when the page becomes
 visible again. Events are matched by slug, regardless of response order.
@@ -30,7 +45,7 @@ retain the previous data and timestamp with a visible error message. All events
 must load and validate before either section updates, keeping the shared timestamp
 accurate.
 
-Under the heading “ראש הממשלה הבא”, the page displays candidate
+Under the selected role's heading, the page displays candidate
 portraits, names, and percentages. Portraits use
 each market's `image` URL, falling back to its `icon` URL. Known candidate names
 are displayed in Hebrew; new names from the event are still included. There is no

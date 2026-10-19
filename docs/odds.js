@@ -1,4 +1,4 @@
-import { API_URL, CANDIDATES_SLUG, getCandidates, getElectionOutcomes } from './polymarket.mjs';
+import { API_URL, ROLE_MARKETS, getRoleCandidates, getElectionOutcomes } from './polymarket.mjs';
 
 const REFRESH_MS = 60_000;
 const names = new Map(Object.entries({
@@ -19,12 +19,51 @@ const names = new Map(Object.entries({
     "Bezalel Smotrich": "בצלאל סמוטריץ׳",
     "Gideon Sa'ar": "גדעון סער",
     "Gideon Saar": "גדעון סער",
+    "Gideon Sa’ar": "גדעון סער",
     "Yariv Levin": "יריב לוין",
+    "Israel Katz": "ישראל כ״ץ",
+    "Ofer Winter": "עופר וינטר",
+    "Eli Cohen": "אלי כהן",
+    "Matan Kahana": "מתן כהנא",
+    "Elazar Stern": "אלעזר שטרן",
+    "Moshe Feiglin": "משה פייגלין",
+    "Yoram Cohen": "יורם כהן",
+    "Amir Ohana": "אמיר אוחנה",
+    "Shaul Meridor": "שאול מרידור",
+    "Yaron Zelekha": "ירון זליכה",
+    "Orit Farkash-Hacohen": "אורית פרקש הכהן",
+    "Hili Tropper": "חילי טרופר",
+    "Hili Tropper (Yechiel Tropper)": "חילי טרופר",
+    "Ron Dermer": "רון דרמר",
+    "Ayelet Shaked": "איילת שקד",
+    "Simcha Rothman": "שמחה רוטמן",
+    "Ofir Katz": "אופיר כץ",
+    "Gilad Kariv": "גלעד קריב",
+    "Oded Forer": "עודד פורר",
+    "Tally Gotliv": "טלי גוטליב",
+    "Avi Dichter": "אבי דיכטר",
+    "Yoav Segalovich": "יואב סגלוביץ׳",
+    "Meirav Ben-Ari": "מירב בן ארי",
+    "Ram Ben-Barak": "רם בן ברק",
+    "Talya Lankri": "טליה לנקרי",
+    "Aryeh Deri": "אריה דרעי",
+    "Moshe Arbel": "משה ארבל",
+    "Miri Regev": "מירי רגב",
+    "Keren Terner Eyal": "קרן טרנר אייל",
+    "Meirav Cohen": "מירב כהן",
+    "Michael Malchieli": "מיכאל מלכיאלי",
+    "Yoav Ben-Tzur": "יואב בן צור",
+    "No Next Minister by Feb 28": "ללא מינוי עד 28 בפברואר 2027",
 }));
 
 const panel = document.querySelector('#odds-panel');
 const list = document.querySelector('#candidates');
 const loadingIndicator = document.querySelector('#loading');
+const roleSelect = document.querySelector('#role-select');
+const roleTitle = document.querySelector('#role-title');
+const roleSource = document.querySelector('#role-source');
+const roleStatus = document.querySelector('#role-status');
+const emptyState = document.querySelector('#empty-state');
 const electionPanel = document.querySelector('#election-panel');
 const electionOutcomes = document.querySelector('#election-outcomes');
 const electionValues = {
@@ -49,6 +88,16 @@ let loading = false;
 let timer;
 let lastFetchedAt;
 let nextRefreshAt;
+let selectedRole = ROLE_MARKETS[0];
+let roleCandidates = new Map();
+
+roleSelect.replaceChildren(...ROLE_MARKETS.map(role => {
+    const option = document.createElement('option');
+    option.value = role.slug;
+    option.textContent = role.label;
+    return option;
+}));
+roleSelect.value = selectedRole.slug;
 
 function updateTimestamp() {
     if (!lastFetchedAt) return;
@@ -104,6 +153,20 @@ function render(candidates) {
     list.replaceChildren(rows);
 }
 
+function renderSelectedRole() {
+    const candidates = roleCandidates.get(selectedRole.slug);
+    if (!candidates) return;
+    roleTitle.textContent = selectedRole.label;
+    roleSource.href = `https://polymarket.com/event/${selectedRole.slug}`;
+    const sourceLabel = `שוק ${selectedRole.label} הבא בפולימרקט`;
+    roleSource.setAttribute('aria-label', sourceLabel);
+    roleSource.title = sourceLabel;
+    render(candidates);
+    emptyState.hidden = candidates.length > 0;
+    loadingIndicator.hidden = true;
+    roleStatus.textContent = `מוצגות ${candidates.length} תוצאות עבור ${selectedRole.label} הבא`;
+}
+
 async function loadOdds() {
     if (loading) return;
     loading = true;
@@ -116,7 +179,7 @@ async function loadOdds() {
     countdown.hidden = true;
     updateError.hidden = true;
     if (!lastFetchedAt) initialStatus.textContent = 'טוענים את הנתונים…';
-    loadingIndicator.hidden = list.childElementCount > 0;
+    loadingIndicator.hidden = roleCandidates.has(selectedRole.slug);
     electionLoading.hidden = !electionOutcomes.hidden;
     panel.setAttribute('aria-busy', 'true');
     electionPanel.setAttribute('aria-busy', 'true');
@@ -127,10 +190,11 @@ async function loadOdds() {
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const events = await response.json();
         if (!Array.isArray(events)) throw new Error('Expected an array of events');
-        const candidateEvent = events.find(event => event?.slug === CANDIDATES_SLUG);
-        const candidates = getCandidates(candidateEvent);
+        const candidatesByRole = getRoleCandidates(events);
         const election = getElectionOutcomes(events);
-        render(candidates);
+        roleCandidates = candidatesByRole;
+        renderSelectedRole();
+        roleSelect.disabled = false;
         Object.entries(electionValues).forEach(([key, element]) => {
             element.textContent = percent.format(election[key]);
         });
@@ -167,6 +231,12 @@ async function loadOdds() {
     }
 }
 
+roleSelect.addEventListener('change', () => {
+    const role = ROLE_MARKETS.find(role => role.slug === roleSelect.value);
+    if (!role || !roleCandidates.has(role.slug)) return;
+    selectedRole = role;
+    renderSelectedRole();
+});
 refresh.addEventListener('click', loadOdds);
 document.addEventListener('visibilitychange', () => {
     if (!document.hidden) loadOdds();

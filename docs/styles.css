@@ -66,6 +66,15 @@ h1, h2 { margin: 0 0 14px; font-size: clamp(26px, 5vw, 34px); line-height: 1.35;
 .election-outcome dt { font-size: 20px; font-weight: 600; line-height: 1.5; }
 .election-outcome dd { margin: 0; color: var(--accent-color); }
 .outcome-date { display: block; color: var(--muted-color); font-size: 14px; font-weight: 400; line-height: 1.7; }
+.role-chooser { margin-bottom: 12px; }
+.role-chooser label { display: block; margin-bottom: 8px; color: var(--muted-color); font-size: 13px; font-weight: 600; }
+.role-select-control { position: relative; }
+#role-select { display: block; appearance: none; width: 100%; min-height: 56px; padding: 14px 18px; padding-inline-end: 52px; border: 1px solid var(--button-border-color); border-radius: 14px; background: var(--card-background); color: var(--text-color); font: inherit; font-size: 17px; font-weight: 600; cursor: pointer; }
+#role-select:hover:not(:disabled) { border-color: var(--accent-color); }
+#role-select:disabled { color: var(--muted-color); cursor: wait; }
+.role-select-control svg { position: absolute; inset-inline-end: 18px; top: 50%; width: 20px; height: 20px; transform: translateY(-50%); color: var(--accent-color); pointer-events: none; }
+.empty-state { padding: 24px 0; color: var(--muted-color); font-size: 15px; line-height: 1.7; text-align: center; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 .candidates { list-style: none; margin: 0; padding: 0; }
 .candidate {
     display: grid;
