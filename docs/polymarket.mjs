@@ -1,14 +1,15 @@
 export const CANDIDATES_SLUG = 'who-will-be-the-next-prime-minister-of-israel-after-the-next-election';
 export const DEFENSE_SLUG = 'next-israeli-minister-of-defense';
 export const DEFENSE_NO_APPOINTMENT_SLUG = 'will-no-next-israeli-minister-of-defense-be-appointed-by-february-28-2027';
+const MINISTER_DEADLINE = ' (עד 28 לפברואר 2027)';
 export const ROLE_MARKETS = [
     { slug: CANDIDATES_SLUG, label: 'ראש הממשלה' },
-    { slug: DEFENSE_SLUG, label: 'שר הביטחון' },
-    { slug: 'next-israeli-minister-of-foreign-affairs', label: 'שר החוץ' },
-    { slug: 'next-israeli-minister-of-finance', label: 'שר האוצר' },
-    { slug: 'next-israeli-minister-of-justice', label: 'שר המשפטים' },
-    { slug: 'next-israeli-minister-of-national-security', label: 'השר לביטחון לאומי' },
-    { slug: 'next-israeli-minister-of-interior', label: 'שר הפנים' },
+    { slug: DEFENSE_SLUG, label: `שר הביטחון${MINISTER_DEADLINE}` },
+    { slug: 'next-israeli-minister-of-foreign-affairs', label: `שר החוץ${MINISTER_DEADLINE}` },
+    { slug: 'next-israeli-minister-of-finance', label: `שר האוצר${MINISTER_DEADLINE}` },
+    { slug: 'next-israeli-minister-of-justice', label: `שר המשפטים${MINISTER_DEADLINE}` },
+    { slug: 'next-israeli-minister-of-national-security', label: `השר לביטחון לאומי${MINISTER_DEADLINE}` },
+    { slug: 'next-israeli-minister-of-interior', label: `שר הפנים${MINISTER_DEADLINE}` },
 ];
 // Fixed by approximate expected seats from the 2026-10-19 market snapshot.
 // The midpoint/tail assumptions and snapshot values are documented in README.md.
@@ -103,7 +104,7 @@ function getImage(market) {
     }
 }
 
-export function getCandidates(event) {
+export function getCandidates(event, { omitNoAppointment = false } = {}) {
     if (!event || !Array.isArray(event.markets) || !event.markets.length) {
         throw new Error('Event has no markets');
     }
@@ -113,6 +114,10 @@ export function getCandidates(event) {
     for (const market of event.markets) {
         if (!market || typeof market !== 'object') throw new Error('Invalid market');
         if (market.closed || market.archived || market.active === false) continue;
+        if (omitNoAppointment && (
+            /^will-no-next-israeli-minister-/i.test(market.slug || '') ||
+            /^no (?:next minister|one)\b/i.test(String(market.groupItemTitle || '').trim())
+        )) continue;
 
         const { yes: probability } = getBinaryProbabilities(market);
         // Apply the threshold to the original probability, before formatting.
@@ -136,7 +141,9 @@ export function getRoleCandidates(events) {
     if (!Array.isArray(events)) throw new Error('Expected an array of events');
     return new Map(ROLE_MARKETS.map(role => [
         role.slug,
-        getCandidates(events.find(event => event?.slug === role.slug)),
+        getCandidates(events.find(event => event?.slug === role.slug), {
+            omitNoAppointment: role.slug !== CANDIDATES_SLUG,
+        }),
     ]));
 }
 

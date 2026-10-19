@@ -83,13 +83,13 @@
                 </div>
             </section>
             <section id="odds-panel" aria-labelledby="odds-title" aria-busy="true">
-                <h1 id="odds-title"><span id="role-title">ראש הממשלה</span> <span class="heading-end">הבא <a class="market-link" id="role-source" href="https://polymarket.com/event/who-will-be-the-next-prime-minister-of-israel-after-the-next-election" aria-label="שוק ראש הממשלה הבא בפולימרקט" title="שוק ראש הממשלה הבא בפולימרקט">📊</a></span></h1>
+                <h1 id="odds-title">הממשלה <span class="heading-end">הבאה <a class="market-link" id="role-source" href="https://polymarket.com/event/who-will-be-the-next-prime-minister-of-israel-after-the-next-election" aria-label="שוק ראש הממשלה בפולימרקט" title="שוק ראש הממשלה בפולימרקט">📊</a></span></h1>
                 <div class="market-chooser">
-                    <label for="role-select">בחרו תפקיד</label>
                     <div class="market-select-control">
-                        <select class="market-select" id="role-select" aria-controls="role-results" disabled>
+                        <select class="market-select" id="role-select" aria-label="תפקיד בממשלה הבאה" aria-controls="role-results" disabled>
                             <option value="who-will-be-the-next-prime-minister-of-israel-after-the-next-election">ראש הממשלה</option>
                         </select>
+                        <span class="role-select-value" id="role-select-value" aria-hidden="true">ראש הממשלה</span>
                         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
                     </div>
                 </div>
@@ -105,18 +105,16 @@
             <section class="party-panel" id="party-panel" aria-labelledby="parties-title" aria-busy="true">
                 <h2 id="parties-title">מפלגות</h2>
                 <div class="market-chooser">
-                    <label for="party-select">בחרו מפלגה</label>
                     <div class="market-select-control">
-                        <select class="market-select" id="party-select" aria-controls="party-results" disabled>
+                        <select class="market-select" id="party-select" aria-label="מפלגה" aria-controls="party-results" disabled>
                             <option value="israel-election-yashar-of-seats">ישר!</option>
                         </select>
                         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
                     </div>
                 </div>
-                <figure class="seat-chart" id="party-results" aria-labelledby="party-chart-title" aria-describedby="party-chart-note" hidden>
+                <figure class="seat-chart" id="party-results" aria-labelledby="party-chart-title" hidden>
                     <figcaption>
                         <h3 id="party-chart-title"><span id="party-name-prefix"></span><span class="heading-end"><span id="party-name-end">ישר!</span> <a class="market-link" id="party-source" href="https://polymarket.com/event/israel-election-yashar-of-seats" aria-label="שוק המנדטים של ישר! בפולימרקט" title="שוק המנדטים של ישר! בפולימרקט">📊</a></span></h3>
-                        <p class="seat-chart-note" id="party-chart-note">הסיכוי לכל טווח מנדטים</p>
                     </figcaption>
                     <div class="seat-histogram" dir="ltr">
                         <div class="seat-y-axis" aria-hidden="true"><span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span></div>
@@ -133,5 +131,8 @@
                 </div>
             </section>
         </main>
+        <footer class="site-footer">
+            <p>נוצר ע״י <a href="https://dannyleshem.com">דני לשם</a> (<a href="https://github.com/dleshem/betanyahu/" dir="ltr">github</a>).</p>
+        </footer>
     </body>
 </html>
