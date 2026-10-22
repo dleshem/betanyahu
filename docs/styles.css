@@ -65,7 +65,7 @@ h1, h2 { margin: 0 0 14px; font-size: clamp(26px, 5vw, 34px); line-height: 1.35;
 .election-outcome { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 16px; padding: 16px 20px; border: 1px solid var(--divider-color); border-radius: 14px; background: var(--card-background); }
 .election-outcome dt { font-size: 20px; font-weight: 600; line-height: 1.5; }
 .election-outcome dd { margin: 0; color: var(--accent-color); }
-.outcome-date { display: block; color: var(--muted-color); font-size: 14px; font-weight: 400; line-height: 1.7; }
+.outcome-date, .outcome-description { display: block; color: var(--muted-color); font-size: 14px; font-weight: 400; line-height: 1.7; }
 .market-chooser { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
 .chooser-market-source { flex: 0 0 48px; min-height: 56px; border: 1px solid var(--button-border-color); border-radius: 14px; background: var(--card-background); font-size: 22px; }
 .market-select-control { position: relative; flex: 1; min-width: 0; }
@@ -77,7 +77,7 @@ h1, h2 { margin: 0 0 14px; font-size: clamp(26px, 5vw, 34px); line-height: 1.35;
 .role-select-deadline { display: inline-block; color: var(--muted-color); font-size: 15px; white-space: nowrap; }
 .market-select:disabled + .market-select-value { color: var(--muted-color); }
 .market-select-control svg { position: absolute; inset-inline-end: 18px; top: 50%; width: 20px; height: 20px; transform: translateY(-50%); color: var(--accent-color); pointer-events: none; }
-.party-panel { margin-top: 36px; padding-top: 36px; border-top: 1px solid var(--divider-color); }
+.party-panel, .bloc-panel { margin-top: 36px; padding-top: 36px; border-top: 1px solid var(--divider-color); }
 .seat-chart { --plot-height: 220px; margin: 20px 0 0; padding: 20px; border: 1px solid var(--divider-color); border-radius: 16px; background: var(--card-background); }
 .seat-histogram { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 10px; }
 .seat-y-axis { display: grid; grid-template-rows: repeat(4, 1fr) 0; align-items: start; height: var(--plot-height); margin-top: 24px; color: var(--muted-color); font-size: 11px; line-height: 1; text-align: right; font-variant-numeric: tabular-nums; }
@@ -129,7 +129,7 @@ h1, h2 { margin: 0 0 14px; font-size: clamp(26px, 5vw, 34px); line-height: 1.35;
     .page { margin: 24px auto; padding: 0 20px; }
     .updates { margin-bottom: 28px; padding: 18px 16px 16px; border-radius: 16px; }
     .election-summary { margin-bottom: 28px; padding-bottom: 28px; }
-    .party-panel { margin-top: 28px; padding-top: 28px; }
+    .party-panel, .bloc-panel { margin-top: 28px; padding-top: 28px; }
     .market-select, .market-select-value { padding-inline-start: 14px; padding-inline-end: 40px; }
     .market-select-control svg { inset-inline-end: 12px; }
     .seat-chart { padding: 14px; }

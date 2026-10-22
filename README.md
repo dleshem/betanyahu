@@ -91,7 +91,13 @@ and 38%.
 The February deadline value is read directly by market slug from the already-fetched
 defense event, independently of the role list's 1% cutoff.
 
-The browser fetches all 23 events in a single HTTP request to the
+The final section, “גושים”, shows “רוב לאחד הגושים” with the **Yes** price from
+[the bloc majority market](https://polymarket.com/event/israel-election-any-coalition-wins-a-majority).
+Its description defines a majority as at least 61 seats for either of the market's
+two groups: The Democrats, Yashar, Together, and Yisrael Beiteinu; or Likud,
+Otzma Yehudit, RZP-Zehut, Amcha Yisrael, United Torah Judaism, and Shas.
+
+The browser fetches all 24 events in a single HTTP request to the
 [Gamma `/events` endpoint](https://gamma-api.polymarket.com/events) with repeated
 `slug` query parameters and `limit=50`, on page load, every minute, and when the page becomes
 visible again. Events are matched by slug, regardless of response order.

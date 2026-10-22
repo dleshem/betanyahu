@@ -33,11 +33,12 @@ export const DEFAULT_PARTY_SLUG = 'israel-election-yashar-of-seats';
 export const SCHEDULE_SLUG = 'will-israel-election-happen-as-scheduled-20260720204824362';
 export const CONFIDENCE_SLUG = 'vote-of-confidence-passes-in-knesset-by-december-31';
 export const HUNG_PARLIAMENT_SLUG = 'israeli-election-results-in-a-hung-parliament';
+export const BLOC_MAJORITY_SLUG = 'israel-election-any-coalition-wins-a-majority';
 export const API_URL = `https://gamma-api.polymarket.com/events?${new URLSearchParams([
     ['limit', '50'],
     ...[
         ...ROLE_MARKETS.map(role => role.slug), ...PARTY_MARKETS.map(party => party.slug),
-        SCHEDULE_SLUG, CONFIDENCE_SLUG, HUNG_PARLIAMENT_SLUG,
+        SCHEDULE_SLUG, CONFIDENCE_SLUG, HUNG_PARLIAMENT_SLUG, BLOC_MAJORITY_SLUG,
     ].map(slug => ['slug', slug]),
 ])}`;
 
@@ -79,6 +80,12 @@ export function getElectionOutcomes(events) {
     if (!Array.isArray(events)) throw new Error('Expected an array of events');
     const schedule = getEventProbabilities(events, SCHEDULE_SLUG);
     return { onSchedule: schedule.yes };
+}
+
+export function getBlocOutcomes(events) {
+    if (!Array.isArray(events)) throw new Error('Expected an array of events');
+    const majority = getEventProbabilities(events, BLOC_MAJORITY_SLUG);
+    return { majority: majority.yes };
 }
 
 export function getGovernmentOutcomes(events) {
