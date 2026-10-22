@@ -1,4 +1,4 @@
-import { API_URL, ROLE_MARKETS, PARTY_MARKETS, DEFAULT_PARTY_SLUG, getRoleCandidates, getElectionOutcomes, getGovernmentOutcomes, getPartyDistributions } from './polymarket.mjs';
+import { API_URL, ROLE_MARKETS, PARTY_MARKETS, DEFAULT_PARTY_SLUG, getRoleCandidates, getElectionOutcomes, getGovernmentOutcomes, getBlocOutcomes, getPartyDistributions } from './polymarket.mjs';
 
 const REFRESH_MS = 60_000;
 const names = new Map(Object.entries({
@@ -86,6 +86,12 @@ const governmentValues = {
     anotherElection: document.querySelector('#government-another-election'),
 };
 const governmentLoading = document.querySelector('#government-loading');
+const blocPanel = document.querySelector('#bloc-panel');
+const blocOutcomes = document.querySelector('#bloc-outcomes');
+const blocValues = {
+    majority: document.querySelector('#bloc-majority'),
+};
+const blocLoading = document.querySelector('#bloc-loading');
 const updates = document.querySelector('#updates');
 const refresh = document.querySelector('#refresh');
 const refreshLabel = document.querySelector('#refresh-label');
@@ -281,10 +287,12 @@ async function loadOdds() {
     loadingIndicator.hidden = roleCandidates.has(selectedRole.slug);
     electionLoading.hidden = !electionOutcomes.hidden;
     governmentLoading.hidden = !governmentOutcomes.hidden;
+    blocLoading.hidden = !blocOutcomes.hidden;
     partyLoading.hidden = partyDistributions.has(selectedParty.slug);
     panel.setAttribute('aria-busy', 'true');
     electionPanel.setAttribute('aria-busy', 'true');
     governmentPanel.setAttribute('aria-busy', 'true');
+    blocPanel.setAttribute('aria-busy', 'true');
     partyPanel.setAttribute('aria-busy', 'true');
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15_000);
@@ -296,6 +304,7 @@ async function loadOdds() {
         const candidatesByRole = getRoleCandidates(events);
         const election = getElectionOutcomes(events);
         const government = getGovernmentOutcomes(events);
+        const bloc = getBlocOutcomes(events);
         const distributions = getPartyDistributions(events);
         roleCandidates = candidatesByRole;
         partyDistributions = distributions;
@@ -311,6 +320,10 @@ async function loadOdds() {
             element.textContent = percent.format(government[key]);
         });
         governmentOutcomes.hidden = false;
+        Object.entries(blocValues).forEach(([key, element]) => {
+            element.textContent = percent.format(bloc[key]);
+        });
+        blocOutcomes.hidden = false;
         lastFetchedAt = new Date();
         lastUpdated.dateTime = lastFetchedAt.toISOString();
         lastUpdated.title = `${dateFormat.format(lastFetchedAt)}, ${timeFormat.format(lastFetchedAt)}`;
@@ -332,10 +345,12 @@ async function loadOdds() {
         loadingIndicator.hidden = true;
         electionLoading.hidden = true;
         governmentLoading.hidden = true;
+        blocLoading.hidden = true;
         partyLoading.hidden = true;
         panel.setAttribute('aria-busy', 'false');
         electionPanel.setAttribute('aria-busy', 'false');
         governmentPanel.setAttribute('aria-busy', 'false');
+        blocPanel.setAttribute('aria-busy', 'false');
         partyPanel.setAttribute('aria-busy', 'false');
         refresh.disabled = false;
         refreshLabel.textContent = 'עדכון עכשיו';
