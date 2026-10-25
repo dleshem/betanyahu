@@ -95,6 +95,7 @@ h1, h2 { margin: 0 0 14px; font-size: clamp(26px, 5vw, 34px); line-height: 1.35;
 .seat-range { display: block; margin-top: 8px; font-size: 12px; line-height: 20px; white-space: nowrap; text-align: center; }
 .seat-axis-label { margin: 8px 0 0; color: var(--muted-color); font-size: 12px; text-align: center; }
 .seat-detail { min-height: 44px; margin: 20px 0 0; padding: 12px; border-radius: 10px; background: var(--button-hover-background); color: var(--accent-color); font-size: 14px; font-weight: 600; line-height: 1.6; text-align: center; }
+.seat-detail bdi { white-space: nowrap; }
 .empty-state { padding: 24px 0; color: var(--muted-color); font-size: 15px; line-height: 1.7; text-align: center; }
 .site-footer { max-width: 680px; margin: 0 auto 32px; padding: 24px; border-top: 1px solid var(--divider-color); color: var(--muted-color); font-size: 13px; line-height: 1.7; text-align: center; }
 .site-footer p { margin: 0; }
@@ -115,6 +116,7 @@ h1, h2 { margin: 0 0 14px; font-size: clamp(26px, 5vw, 34px); line-height: 1.35;
 .portrait img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .candidate-name { font-size: 22px; font-weight: 600; overflow-wrap: anywhere; text-align: right; }
 .probability { direction: ltr; font-size: 32px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.8px; }
+.probability-range { white-space: nowrap; }
 .feedback { display: flex; justify-content: center; }
 .loading { width: 24px; height: 24px; margin: 24px; border: 2px solid var(--divider-color); border-top-color: var(--accent-color); border-radius: 50%; animation: spin 1s linear infinite; }
 :focus-visible { outline: 3px solid var(--focus-color); outline-offset: 4px; }
@@ -136,11 +138,17 @@ h1, h2 { margin: 0 0 14px; font-size: clamp(26px, 5vw, 34px); line-height: 1.35;
     .seat-histogram { grid-template-columns: 28px minmax(0, 1fr); gap: 6px; }
     .seat-bars { gap: 5px; }
     .seat-bar-value { font-size: 9px; }
+    .seat-bar-value.probability-range { line-height: 1.2; }
+    .seat-bar-value.probability-range span { display: block; }
     .seat-range { font-size: 10px; letter-spacing: -.2px; }
     .election-outcome { gap: 14px; padding: 16px; }
     .election-outcome dt { font-size: 18px; }
+    .election-outcome:has(.probability-range) { grid-template-columns: minmax(0, 1fr); gap: 8px; }
     .candidate { grid-template-columns: 56px minmax(0, 1fr) auto; gap: 14px; padding: 20px 0; }
     .portrait { width: 56px; height: 56px; }
     .candidate-name { font-size: 18px; }
+    .candidate:has(.probability-range) { grid-template-columns: 56px minmax(0, 1fr); gap: 8px 14px; }
+    .candidate:has(.probability-range) .portrait { grid-row: span 2; }
+    .candidate .probability-range { grid-column: 2; justify-self: start; font-size: 20px; }
     .probability { font-size: 26px; }
 }

@@ -6,6 +6,7 @@ import {
     HUNG_PARLIAMENT_SLUG, BLOC_MAJORITY_SLUG,
     getCandidates, getRoleCandidates, getElectionOutcomes, getGovernmentOutcomes,
     getBlocOutcomes, getPartyDistributions,
+    formatProbability, isProbabilityRange,
 } from '../docs/polymarket.mjs';
 
 function market(overrides = {}) {
@@ -66,13 +67,13 @@ test('all 24 events use midpoints for roles, party charts, elections, government
         near(bins[0].probability, 0.3);
         near(bins[1].probability, 0.6);
     }
-    near(getElectionOutcomes(events).onSchedule, 0.89);
+    near(getElectionOutcomes(events).onSchedule.probability, 0.89);
     const government = getGovernmentOutcomes(events);
-    near(government.novemberDecember2026, 0.4);
-    near(government.januaryFebruary2027, 0.4);
-    near(government.marchJune2027, 0.05);
-    near(government.anotherElection, 0.15);
-    near(getBlocOutcomes(events).majority, 0.5);
+    near(government.novemberDecember2026.probability, 0.4);
+    near(government.januaryFebruary2027.probability, 0.4);
+    near(government.marchJune2027.probability, 0.05);
+    near(government.anotherElection.probability, 0.15);
+    near(getBlocOutcomes(events).majority.probability, 0.5);
 });
 
 test('candidate ranking and the strict 1% cutoff use unrounded midpoints', () => {
@@ -110,14 +111,14 @@ test('inconsistent deadline midpoints still clamp negative period differences to
     Object.assign(events.find(event => event.slug === DEFENSE_SLUG).markets[1], { bestBid: 0.5, bestAsk: 0.7 });
     Object.assign(events.find(event => event.slug === HUNG_PARLIAMENT_SLUG).markets[0], { bestBid: 0.8, bestAsk: 0.9 });
     const government = getGovernmentOutcomes(events);
-    assert.equal(government.januaryFebruary2027, 0);
-    assert.equal(government.marchJune2027, 0);
+    assert.equal(government.januaryFebruary2027.probability, 0);
+    assert.equal(government.marchJune2027.probability, 0);
 });
 
 function electionProbability(overrides) {
     return getElectionOutcomes([
         event(SCHEDULE_SLUG, [market({ slug: SCHEDULE_SLUG, ...overrides })]),
-    ]).onSchedule;
+    ]).onSchedule.probability;
 }
 
 test('one-sided books use price bounds, preserving genuine zero and one quotes', () => {
@@ -144,4 +145,81 @@ test('empty books and malformed quotes fail validation instead of falling back t
         assert.throws(() => electionProbability({ bestBid, bestAsk }));
     }
     assert.throws(() => electionProbability({ outcomes: ['Yes', 'Maybe'] }));
+});
+
+test('display uses bid–ask bounds at or above five percentage points and midpoints below it', () => {
+    for (const [lower, upper, expected] of [
+        [0.3, 0.3499, '32.495%'],
+        [0.3, 0.35, '30%–35%'],
+        [0.1, 0.15, '10%–15%'],
+        [0.94, 0.99, '94%–99%'],
+        [0.1, 0.7, '10%–70%'],
+        [0, 0, '0%'],
+        [1, 1, '100%'],
+        [0, 1, '0%–100%'],
+    ]) {
+        const odds = getElectionOutcomes([
+            event(SCHEDULE_SLUG, [market({ slug: SCHEDULE_SLUG, bestBid: lower, bestAsk: upper })]),
+        ]).onSchedule;
+        assert.equal(formatProbability(odds), expected);
+    }
+    assert.equal(isProbabilityRange({ lower: 0.3, upper: 0.349999 }), false);
+    const chartPercent = new Intl.NumberFormat('he-IL', { style: 'percent', maximumFractionDigits: 1 });
+    assert.equal(formatProbability({ probability: 0.30055, lower: 0.2001, upper: 0.401 }, chartPercent), '20%–40.1%');
+});
+
+test('reversed outcomes and one-sided books preserve display bounds', () => {
+    const odds = overrides => getElectionOutcomes([
+        event(SCHEDULE_SLUG, [market({ slug: SCHEDULE_SLUG, ...overrides })]),
+    ]).onSchedule;
+    const reversed = odds({ outcomes: ['No', 'Yes'], bestBid: 0.1, bestAsk: 0.3 });
+    near(reversed.lower, 0.7);
+    near(reversed.upper, 0.9);
+    assert.equal(formatProbability(reversed), '70%–90%');
+    assert.equal(formatProbability(odds({ bestBid: null, bestAsk: 0.2 })), '0%–20%');
+    assert.equal(formatProbability(odds({ bestBid: 0.8, bestAsk: null })), '80%–100%');
+});
+
+test('all display sections carry the appropriate bid–ask bounds', () => {
+    const events = snapshot();
+    for (const candidates of getRoleCandidates(events).values()) {
+        assert.equal(formatProbability(candidates[0]), '10%–50%');
+    }
+    for (const bins of getPartyDistributions(events).values()) {
+        assert.equal(formatProbability(bins[0]), '10%–50%');
+        assert.equal(formatProbability(bins[1]), '40%–80%');
+    }
+    assert.equal(formatProbability(getElectionOutcomes(events).onSchedule), '80%–98%');
+    assert.equal(formatProbability(getBlocOutcomes(events).majority), '20%–80%');
+    const government = getGovernmentOutcomes(events);
+    assert.equal(formatProbability(government.novemberDecember2026), '20%–60%');
+    assert.equal(formatProbability(government.januaryFebruary2027), '10%–70%');
+    assert.equal(formatProbability(government.marchJune2027), '0%–20%');
+    assert.equal(formatProbability(government.anotherElection), '10%–20%');
+});
+
+test('period ranges combine deadline bounds and clamp negative endpoints to zero', () => {
+    const events = snapshot();
+    Object.assign(events.find(event => event.slug === CONFIDENCE_SLUG).markets[0], { bestBid: 0.4, bestAsk: 0.43 });
+    Object.assign(events.find(event => event.slug === DEFENSE_SLUG).markets[1], { bestBid: 0.4, bestAsk: 0.43 });
+    const government = getGovernmentOutcomes(events);
+    // Both source spreads are below 5%, but their difference spans six points.
+    assert.equal(formatProbability(government.januaryFebruary2027), '14%–20%');
+    Object.assign(events.find(event => event.slug === CONFIDENCE_SLUG).markets[0], { bestBid: 0.7, bestAsk: 0.9 });
+    const clamped = getGovernmentOutcomes(events).januaryFebruary2027;
+    assert.deepEqual(clamped, { probability: 0, lower: 0, upper: 0 });
+});
+
+test('merged estimated seat brackets sum display bounds and cap them at 100%', () => {
+    const events = snapshot();
+    const party = PARTY_MARKETS.find(party => party.estimateSeatsFromVoteShare);
+    events.find(event => event.slug === party.slug).markets = [
+        market({ groupItemTitle: '<2.75%', bestBid: 0.1, bestAsk: 0.3 }),
+        market({ groupItemTitle: '2.75-3.25%', bestBid: 0.2, bestAsk: 0.9 }),
+        market({ groupItemTitle: '3.25%+', bestBid: 0.01, bestAsk: 0.03 }),
+    ];
+    const bins = getPartyDistributions(events).get(party.slug);
+    assert.equal(formatProbability(bins[0]), '30%–100%');
+    near(bins[0].probability, 0.75);
+    assert.equal(formatProbability(bins[1]), '2%');
 });

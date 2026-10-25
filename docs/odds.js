@@ -1,4 +1,4 @@
-import { API_URL, ROLE_MARKETS, PARTY_MARKETS, DEFAULT_PARTY_SLUG, getRoleCandidates, getElectionOutcomes, getGovernmentOutcomes, getBlocOutcomes, getPartyDistributions } from './polymarket.mjs';
+import { API_URL, ROLE_MARKETS, PARTY_MARKETS, DEFAULT_PARTY_SLUG, getRoleCandidates, getElectionOutcomes, getGovernmentOutcomes, getBlocOutcomes, getPartyDistributions, formatProbability, isProbabilityRange } from './polymarket.mjs';
 
 const REFRESH_MS = 60_000;
 const names = new Map(Object.entries({
@@ -100,7 +100,6 @@ const lastUpdated = document.querySelector('#last-updated');
 const countdownLabel = document.querySelector('#countdown-label');
 const countdown = document.querySelector('#countdown');
 const updateError = document.querySelector('#update-error');
-const percent = new Intl.NumberFormat('he-IL', { style: 'percent', maximumFractionDigits: 4 });
 const chartPercent = new Intl.NumberFormat('he-IL', { style: 'percent', maximumFractionDigits: 1 });
 const timeFormat = new Intl.DateTimeFormat('he-IL', { hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' });
 const dateFormat = new Intl.DateTimeFormat('he-IL', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -175,12 +174,27 @@ function render(candidates) {
 
         const probability = document.createElement('span');
         probability.className = 'probability';
-        probability.textContent = percent.format(candidate.probability);
+        renderProbability(probability, candidate);
 
         row.append(portrait, name, probability);
         rows.append(row);
     });
     list.replaceChildren(rows);
+}
+
+function renderProbability(element, odds, formatter) {
+    const text = formatProbability(odds, formatter);
+    const range = isProbabilityRange(odds);
+    element.classList.toggle('probability-range', range);
+    if (range) {
+        element.replaceChildren(...text.split('–').map((bound, index) => {
+            const span = document.createElement('span');
+            span.textContent = index === 0 ? bound : `–${bound}`;
+            return span;
+        }));
+    } else {
+        element.textContent = text;
+    }
 }
 
 function renderSelectedRole() {
@@ -220,7 +234,7 @@ function selectSeatBin(index) {
     });
     const value = document.createElement('bdi');
     value.dir = 'ltr';
-    value.textContent = percent.format(bin.probability);
+    value.textContent = formatProbability(bin);
     seatDetail.replaceChildren(`${partyRangeDescription(bin)} · `, value,
         selectedParty.estimateSeatsFromVoteShare ? ' סיכוי (אומדן)' : ' סיכוי');
 }
@@ -241,7 +255,7 @@ function renderSelectedParty() {
         button.type = 'button';
         button.className = 'seat-bin';
         button.style.setProperty('--probability', String(bin.probability));
-        const label = `${partyRangeDescription(bin)}: ${percent.format(bin.probability)}`;
+        const label = `${partyRangeDescription(bin)}: ${formatProbability(bin)}`;
         button.setAttribute('aria-label', label);
         button.title = label;
         const track = document.createElement('span');
@@ -249,7 +263,7 @@ function renderSelectedParty() {
         track.setAttribute('aria-hidden', 'true');
         const probability = document.createElement('span');
         probability.className = 'seat-bar-value';
-        probability.textContent = chartPercent.format(bin.probability);
+        renderProbability(probability, bin, chartPercent);
         const bar = document.createElement('span');
         bar.className = 'seat-bar';
         track.append(probability, bar);
@@ -313,15 +327,15 @@ async function loadOdds() {
         roleSelect.disabled = false;
         partySelect.disabled = false;
         Object.entries(electionValues).forEach(([key, element]) => {
-            element.textContent = percent.format(election[key]);
+            renderProbability(element, election[key]);
         });
         electionOutcomes.hidden = false;
         Object.entries(governmentValues).forEach(([key, element]) => {
-            element.textContent = percent.format(government[key]);
+            renderProbability(element, government[key]);
         });
         governmentOutcomes.hidden = false;
         Object.entries(blocValues).forEach(([key, element]) => {
-            element.textContent = percent.format(bloc[key]);
+            renderProbability(element, bloc[key]);
         });
         blocOutcomes.hidden = false;
         lastFetchedAt = new Date();
