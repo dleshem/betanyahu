@@ -97,10 +97,10 @@ plus the probability of another election. Each row has a 📊 source link:
 
 | Label | Market outcome |
 | --- | --- |
-| נובמבר-דצמבר 2026 | **Yes** from [the confidence vote market](https://polymarket.com/event/vote-of-confidence-passes-in-knesset-by-december-31) |
-| ינואר-פברואר 2027 | **No** from the “No Next Minister by Feb 28” outcome in [the defense minister event](https://polymarket.com/event/next-israeli-minister-of-defense), minus the confidence vote **Yes** price |
-| מרץ-יוני 2027 | **No** from [the hung parliament market](https://polymarket.com/event/israeli-election-results-in-a-hung-parliament), minus the defense market's “No Next Minister by Feb 28” **No** price |
-| הולכים שוב לבחירות | **Yes** from [the hung parliament market](https://polymarket.com/event/israeli-election-results-in-a-hung-parliament) |
+| נוב׳–דצמ׳ 2026 | **Yes** from [the confidence vote market](https://polymarket.com/event/vote-of-confidence-passes-in-knesset-by-december-31) |
+| ינו׳–פבר׳ 2027 | **No** from the “No Next Minister by Feb 28” outcome in [the defense minister event](https://polymarket.com/event/next-israeli-minister-of-defense), minus the confidence vote **Yes** price |
+| מרץ–יוני 2027 | **No** from [the hung parliament market](https://polymarket.com/event/israeli-election-results-in-a-hung-parliament), minus the defense market's “No Next Minister by Feb 28” **No** price |
+| בחירות חוזרות | **Yes** from [the hung parliament market](https://polymarket.com/event/israeli-election-results-in-a-hung-parliament) |
 
 Period differences use the midpoint probabilities before display rounding. Since these
 deadlines are priced in separate markets, any negative difference is displayed as

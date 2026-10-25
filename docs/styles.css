@@ -65,6 +65,7 @@ h1, h2 { margin: 0 0 14px; font-size: clamp(26px, 5vw, 34px); line-height: 1.35;
 .election-outcome { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 16px; padding: 16px 20px; border: 1px solid var(--divider-color); border-radius: 14px; background: var(--card-background); }
 .election-outcome dt { font-size: 20px; font-weight: 600; line-height: 1.5; }
 .election-outcome dd { margin: 0; color: var(--accent-color); }
+#government-outcomes abbr { text-decoration: none; }
 .outcome-date, .outcome-description { display: block; color: var(--muted-color); font-size: 14px; font-weight: 400; line-height: 1.7; }
 .market-chooser { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
 .chooser-market-source { flex: 0 0 48px; min-height: 56px; border: 1px solid var(--button-border-color); border-radius: 14px; background: var(--card-background); font-size: 22px; }
@@ -138,12 +139,14 @@ h1, h2 { margin: 0 0 14px; font-size: clamp(26px, 5vw, 34px); line-height: 1.35;
     .seat-histogram { grid-template-columns: 28px minmax(0, 1fr); gap: 6px; }
     .seat-bars { gap: 5px; }
     .seat-bar-value { font-size: 9px; }
-    .seat-bar-value.probability-range { line-height: 1.2; }
-    .seat-bar-value.probability-range span { display: block; }
     .seat-range { font-size: 10px; letter-spacing: -.2px; }
     .election-outcome { gap: 14px; padding: 16px; }
     .election-outcome dt { font-size: 18px; }
     .election-outcome:has(.probability-range) { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+    #government-outcomes .election-outcome { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; padding: 12px; }
+    #government-outcomes dt { font-size: 16px; }
+    #government-outcomes .probability { font-size: clamp(18px, 5vw, 26px); }
+    #government-outcomes .market-link { min-width: 32px; font-size: 20px; }
     .candidate { grid-template-columns: 56px minmax(0, 1fr) auto; gap: 14px; padding: 20px 0; }
     .portrait { width: 56px; height: 56px; }
     .candidate-name { font-size: 18px; }
