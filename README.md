@@ -15,13 +15,23 @@ default:
 | שר הפנים | [Interior](https://polymarket.com/event/next-israeli-minister-of-interior) |
 
 Every market's probability uses the bid–ask midpoint, calculated directly as
-`(bestBid + bestAsk) / 2` from the Gamma event response, even for large spreads.
-Quotes apply to the first outcome; the other outcome uses `1 - midpoint`.
+`(bestBid + bestAsk) / 2` from the Gamma event response. When the bid–ask spread is
+**5 percentage points or more**, the page displays the bid–ask range instead of
+the midpoint (for example, `30%–35%`). Smaller spreads display the midpoint.
+The cutoff uses unrounded quotes and includes exactly 5 percentage points.
+This applies to candidate odds, summaries, and party chart labels and details;
+bar heights still use midpoints. Quotes apply to the first outcome; the other
+outcome uses `1 - midpoint` with range bounds `1 - ask` and `1 - bid`.
 The reported `outcomePrices` and last trade price are not used. A missing bid
 uses the lower price bound of 0; a missing ask uses the upper bound of 1.
 An empty book, invalid quotes, or a bid above the ask fails the refresh and
 retains the previous data. All filtering, ranking, aggregation, and period
 differences use these unrounded midpoint probabilities.
+Merged estimated seat brackets also add their lower and upper bounds, capped
+at 100%. Calculated periods use the later deadline's lower bound minus the
+earlier deadline's upper bound, and the later upper bound minus the earlier
+lower bound, with negative endpoints clamped to zero. These derived bounds
+use the same 5-point display cutoff.
 
 All seven lists are loaded into memory together, so changing roles updates the
 📊 source link beside the dropdown and results immediately without fetching.
@@ -36,7 +46,7 @@ default. Each bar represents a full seat-range bracket from the party's market,
 ordered by increasing seats from left to right. The height is the **Yes**
 midpoint on a shared 0–100% scale. All brackets are shown, including those at or
 below 1%. Bar labels round to one decimal place; tapping a bar or selecting it
-with the keyboard shows its probability with up to four decimal places. The 📊
+with the keyboard shows its midpoint or range with up to four decimal places. The 📊
 link sits beside the dropdown and follows the selected party. The chart starts
 with the histogram, without repeating the party name or source link. Party and role choices are independent and
 stay selected through refreshes; switching either uses cached data.

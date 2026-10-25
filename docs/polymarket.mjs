@@ -48,6 +48,19 @@ function asArray(value) {
     return result;
 }
 
+export function isProbabilityRange({ lower, upper }) {
+    // Allow for subtraction error at the inclusive five-percentage-point boundary.
+    return upper - lower >= 0.05 - Number.EPSILON;
+}
+
+const percent = new Intl.NumberFormat('he-IL', { style: 'percent', maximumFractionDigits: 4 });
+
+export function formatProbability(odds, formatter = percent) {
+    return isProbabilityRange(odds)
+        ? `${formatter.format(odds.lower)}–${formatter.format(odds.upper)}`
+        : formatter.format(odds.probability);
+}
+
 function getBinaryProbabilities(market) {
     const outcomes = asArray(market.outcomes).map(outcome => String(outcome).trim().toLowerCase());
     if (outcomes.length !== 2 || !outcomes.includes('yes') || !outcomes.includes('no')) {
@@ -65,9 +78,12 @@ function getBinaryProbabilities(market) {
     });
     if (bid > ask) throw new Error('Market bid exceeds ask');
 
-    // Gamma quotes the first outcome. Always use the midpoint, even for wide spreads.
+    // Gamma quotes the first outcome; complement and reverse its bounds for the other.
     const midpoint = (bid + ask) / 2;
-    return { [outcomes[0]]: midpoint, [outcomes[1]]: 1 - midpoint };
+    return {
+        [outcomes[0]]: { probability: midpoint, lower: bid, upper: ask },
+        [outcomes[1]]: { probability: 1 - midpoint, lower: 1 - ask, upper: 1 - bid },
+    };
 }
 
 function getEventProbabilities(events, slug, marketSlug = slug) {
@@ -96,10 +112,18 @@ export function getGovernmentOutcomes(events) {
     const hungParliament = getEventProbabilities(events, HUNG_PARLIAMENT_SLUG);
     return {
         novemberDecember2026: confidence.yes,
-        // Independently priced deadlines can disagree; a period cannot have negative odds.
-        januaryFebruary2027: Math.max(0, noDefenseAppointment.no - confidence.yes),
-        marchJune2027: Math.max(0, hungParliament.no - noDefenseAppointment.no),
+        januaryFebruary2027: subtractProbabilities(noDefenseAppointment.no, confidence.yes),
+        marchJune2027: subtractProbabilities(hungParliament.no, noDefenseAppointment.no),
         anotherElection: hungParliament.yes,
+    };
+}
+
+function subtractProbabilities(later, earlier) {
+    // Independently priced deadlines can disagree; a period cannot have negative odds.
+    return {
+        probability: Math.max(0, later.probability - earlier.probability),
+        lower: Math.max(0, later.lower - earlier.upper),
+        upper: Math.max(0, later.upper - earlier.lower),
     };
 }
 
@@ -130,9 +154,9 @@ export function getCandidates(event, { omitNoAppointment = false } = {}) {
             /^no (?:next minister|one)\b/i.test(String(market.groupItemTitle || '').trim())
         )) continue;
 
-        const { yes: probability } = getBinaryProbabilities(market);
+        const { yes: odds } = getBinaryProbabilities(market);
         // Apply the threshold to the original probability, before formatting.
-        if (probability <= 0.01) continue;
+        if (odds.probability <= 0.01) continue;
 
         let name = market.groupItemTitle;
         if (typeof name !== 'string' || !name.trim()) {
@@ -142,7 +166,7 @@ export function getCandidates(event, { omitNoAppointment = false } = {}) {
         }
         if (!name) throw new Error('Missing candidate name');
         const image = getImage(market);
-        candidates.push({ name: name.trim(), probability, ...(image ? { image } : {}) });
+        candidates.push({ name: name.trim(), ...odds, ...(image ? { image } : {}) });
     }
     // These are independent market prices; do not renormalize them to 100%.
     return candidates.sort((a, b) => b.probability - a.probability || a.name.localeCompare(b.name));
@@ -210,9 +234,9 @@ function getBins(event, parseRange, continuousRanges = false) {
         if (!market || typeof market !== 'object') throw new Error('Invalid party market');
         if (market.closed || market.archived || market.active === false) continue;
         const range = parseRange(market.groupItemTitle);
-        const { yes: probability } = getBinaryProbabilities(market);
+        const { yes: odds } = getBinaryProbabilities(market);
         // Keep every bracket, including probabilities at or below 1%.
-        bins.push({ ...range, probability });
+        bins.push({ ...range, ...odds });
     }
     if (!bins.length) throw new Error('No active party markets');
     bins.sort((a, b) => a.min - b.min || a.max - b.max);
@@ -242,8 +266,10 @@ function getEstimatedSeatBins(event) {
             // Merge overlapping estimates without inventing probabilities within a vote bracket.
             previous.max = Math.max(previous.max, max);
             previous.probability += bin.probability;
+            previous.lower = Math.min(1, previous.lower + bin.lower);
+            previous.upper = Math.min(1, previous.upper + bin.upper);
         } else {
-            estimates.push({ min, max, probability: bin.probability });
+            estimates.push({ min, max, probability: bin.probability, lower: bin.lower, upper: bin.upper });
         }
     }
     return estimates.map(bin => ({
