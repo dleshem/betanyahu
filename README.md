@@ -14,18 +14,27 @@ default:
 | השר לביטחון לאומי | [National security](https://polymarket.com/event/next-israeli-minister-of-national-security) |
 | שר הפנים | [Interior](https://polymarket.com/event/next-israeli-minister-of-interior) |
 
+Every market's probability uses the bid–ask midpoint, calculated directly as
+`(bestBid + bestAsk) / 2` from the Gamma event response, even for large spreads.
+Quotes apply to the first outcome; the other outcome uses `1 - midpoint`.
+The reported `outcomePrices` and last trade price are not used. A missing bid
+uses the lower price bound of 0; a missing ask uses the upper bound of 1.
+An empty book, invalid quotes, or a bid above the ask fails the refresh and
+retains the previous data. All filtering, ranking, aggregation, and period
+differences use these unrounded midpoint probabilities.
+
 All seven lists are loaded into memory together, so changing roles updates the
 📊 source link beside the dropdown and results immediately without fetching.
 The section title stays “הממשלה הבאה”. The PM choice reads “ראש הממשלה”; minister choices include
 “(עד 28 לפברואר 2027)”. The selection stays in place during refreshes. Minister
 lists omit the no-appointment outcome. Every remaining active outcome above 1%
-is ranked by its raw **Yes** price; the 1% cutoff is applied before display
+is ranked by its unrounded **Yes** midpoint; the 1% cutoff is applied before display
 rounding.
 
 The “מפלגות” section adds a matching party dropdown, with Yashar selected by
 default. Each bar represents a full seat-range bracket from the party's market,
-ordered by increasing seats from left to right. The height is the raw **Yes**
-price on a shared 0–100% scale. All brackets are shown, including those at or
+ordered by increasing seats from left to right. The height is the **Yes**
+midpoint on a shared 0–100% scale. All brackets are shown, including those at or
 below 1%. Bar labels round to one decimal place; tapping a bar or selecting it
 with the keyboard shows its probability with up to four decimal places. The 📊
 link sits beside the dropdown and follows the selected party. The chart starts
@@ -39,7 +48,7 @@ It uses the same seat axis and chart styling as the other parties. Vote shares
 below the 3.25% electoral threshold map to zero seats; qualifying shares are
 multiplied by 120 / 100 and rounded to the nearest seat. Upper bracket boundaries
 are excluded. Overlapping estimated seat brackets are merged and their **Yes**
-prices added, without renormalizing or splitting probabilities within a bracket.
+midpoints added, without renormalizing or splitting probabilities within a bracket.
 For the current market this produces 0, 4, and 5+ seat brackets. Bar details mark
 the result as an estimate. The approximation ignores discarded votes and surplus
 vote agreements; the 📊 link continues to open the underlying vote-share market.
@@ -68,10 +77,10 @@ tail is approximated by a bracket with the neighboring range's width, bounded
 to 0–120 seats. Midpoints are weighted by the Yes prices and divided by their
 sum. These are approximate ordering values because the markets do not specify
 probabilities for individual seats within a bracket. The histogram retains the
-original prices. The configured order stays fixed as live prices change.
+unrounded midpoint probabilities. The configured order stays fixed as live prices change.
 
 Just below the update banner, “הבחירות” shows “יערכו במועדן” with the October 27,
-2026 date and the **Yes** price from [the election timing market](https://polymarket.com/event/will-israel-election-happen-as-scheduled-20260720204824362).
+2026 date and the **Yes** midpoint from [the election timing market](https://polymarket.com/event/will-israel-election-happen-as-scheduled-20260720204824362).
 
 The next section, “הכרעה”, shows non-cumulative probabilities for each period,
 plus the probability of another election. Each row has a 📊 source link:
@@ -83,7 +92,7 @@ plus the probability of another election. Each row has a 📊 source link:
 | מרץ-יוני 2027 | **No** from [the hung parliament market](https://polymarket.com/event/israeli-election-results-in-a-hung-parliament), minus the defense market's “No Next Minister by Feb 28” **No** price |
 | הולכים שוב לבחירות | **Yes** from [the hung parliament market](https://polymarket.com/event/israeli-election-results-in-a-hung-parliament) |
 
-Period differences use the original prices before display rounding. Since these
+Period differences use the midpoint probabilities before display rounding. Since these
 deadlines are priced in separate markets, any negative difference is displayed as
 zero; the four values are not renormalized. For example, cumulative deadline odds
 of 48%, 59.1%, and 62% with a 38% repeat-election price display as 48%, 11.1%, 2.9%,
@@ -91,7 +100,7 @@ and 38%.
 The February deadline value is read directly by market slug from the already-fetched
 defense event, independently of the role list's 1% cutoff.
 
-The final section, “גושים”, shows “רוב לאחד הגושים” with the **Yes** price from
+The final section, “גושים”, shows “רוב לאחד הגושים” with the **Yes** midpoint from
 [the bloc majority market](https://polymarket.com/event/israel-election-any-coalition-wins-a-majority).
 Its description defines a majority as at least 61 seats for either of the market's
 two groups: The Democrats, Yashar, Together, and Yisrael Beiteinu; or Likud,
@@ -136,3 +145,5 @@ failed portraits leave a neutral placeholder without hiding the candidate.
 
 Deploy `docs/` through the existing GitHub Pages setup. All candidate data is loaded
 at runtime.
+
+Run the probability regression tests with `node --test`.

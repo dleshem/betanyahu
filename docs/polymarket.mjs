@@ -50,23 +50,24 @@ function asArray(value) {
 
 function getBinaryProbabilities(market) {
     const outcomes = asArray(market.outcomes).map(outcome => String(outcome).trim().toLowerCase());
-    const prices = asArray(market.outcomePrices);
-    if (outcomes.length !== 2 || !outcomes.includes('yes') || !outcomes.includes('no') || prices.length !== outcomes.length) {
-        throw new Error('Expected matching Yes/No outcomes and prices');
+    if (outcomes.length !== 2 || !outcomes.includes('yes') || !outcomes.includes('no')) {
+        throw new Error('Expected Yes/No outcomes');
     }
-    const probabilities = {};
-    outcomes.forEach((outcome, index) => {
-        const price = prices[index];
-        if ((typeof price !== 'number' && typeof price !== 'string') || String(price).trim() === '') {
-            throw new Error(`Missing ${outcome} price`);
+
+    if (market.bestBid == null && market.bestAsk == null) throw new Error('Market has no bid or ask');
+    const [bid, ask] = [market.bestBid ?? 0, market.bestAsk ?? 1].map(quote => {
+        if ((typeof quote !== 'number' && typeof quote !== 'string') || String(quote).trim() === '') {
+            throw new Error('Missing market quote');
         }
-        const probability = Number(price);
-        if (!Number.isFinite(probability) || probability < 0 || probability > 1) {
-            throw new Error(`Invalid ${outcome} price`);
-        }
-        probabilities[outcome] = probability;
+        const price = Number(quote);
+        if (!Number.isFinite(price) || price < 0 || price > 1) throw new Error('Invalid market quote');
+        return price;
     });
-    return probabilities;
+    if (bid > ask) throw new Error('Market bid exceeds ask');
+
+    // Gamma quotes the first outcome. Always use the midpoint, even for wide spreads.
+    const midpoint = (bid + ask) / 2;
+    return { [outcomes[0]]: midpoint, [outcomes[1]]: 1 - midpoint };
 }
 
 function getEventProbabilities(events, slug, marketSlug = slug) {
