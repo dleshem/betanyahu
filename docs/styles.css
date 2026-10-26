@@ -9,6 +9,7 @@
     --button-hover-background: #eef3e9;
     --focus-color: #339b76;
     --muted-color: #52665c;
+    --probability-margin-color: #6b7280;
     --card-background: #fff;
     --card-shadow: 0 8px 28px #172d2908;
     --error-color: #906014;
@@ -29,6 +30,7 @@
         --button-hover-background: #21392d;
         --focus-color: #80d5ae;
         --muted-color: #a5b9ac;
+        --probability-margin-color: #9ca3af;
         --card-background: #18251f;
         --card-shadow: 0 8px 28px #00000014;
         --error-color: #e8bc75;
@@ -118,6 +120,8 @@ h1, h2 { margin: 0 0 14px; font-size: clamp(26px, 5vw, 34px); line-height: 1.35;
 .candidate-name { font-size: 22px; font-weight: 600; overflow-wrap: anywhere; text-align: right; }
 .probability { direction: ltr; font-size: 32px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.8px; }
 .probability-range { white-space: nowrap; }
+.probability-margin { color: var(--probability-margin-color); font-size: .65em; font-weight: 400; letter-spacing: normal; }
+.seat-bar-value .probability-margin, .seat-detail .probability-margin { font-size: max(8px, .85em); }
 .feedback { display: flex; justify-content: center; }
 .loading { width: 24px; height: 24px; margin: 24px; border: 2px solid var(--divider-color); border-top-color: var(--accent-color); border-radius: 50%; animation: spin 1s linear infinite; }
 :focus-visible { outline: 3px solid var(--focus-color); outline-offset: 4px; }
@@ -152,6 +156,6 @@ h1, h2 { margin: 0 0 14px; font-size: clamp(26px, 5vw, 34px); line-height: 1.35;
     .candidate-name { font-size: 18px; }
     .candidate:has(.probability-range) { grid-template-columns: 56px minmax(0, 1fr); gap: 8px 14px; }
     .candidate:has(.probability-range) .portrait { grid-row: span 2; }
-    .candidate .probability-range { grid-column: 2; justify-self: start; font-size: 20px; }
+    .candidate .probability-range { grid-column: 2; justify-self: start; }
     .probability { font-size: 26px; }
 }
