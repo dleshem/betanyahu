@@ -1,4 +1,4 @@
-import { API_URL, ROLE_MARKETS, PARTY_MARKETS, DEFAULT_PARTY_SLUG, getRoleCandidates, getElectionOutcomes, getGovernmentOutcomes, getBlocOutcomes, getPartyDistributions, formatProbability, isProbabilityRange } from './polymarket.mjs';
+import { API_URL, ROLE_MARKETS, PARTY_MARKETS, DEFAULT_PARTY_SLUG, getRoleCandidates, getElectionOutcomes, getGovernmentOutcomes, getBlocOutcomes, getPartyDistributions, formatProbability, getProbabilityDisplay } from './polymarket.mjs';
 
 const REFRESH_MS = 60_000;
 const names = new Map(Object.entries({
@@ -183,17 +183,14 @@ function render(candidates) {
 }
 
 function renderProbability(element, odds, formatter) {
-    const text = formatProbability(odds, formatter);
-    const range = isProbabilityRange(odds);
-    element.classList.toggle('probability-range', range);
-    if (range) {
-        element.replaceChildren(...text.split('–').map((bound, index) => {
-            const span = document.createElement('span');
-            span.textContent = index === 0 ? bound : `–${bound}`;
-            return span;
-        }));
-    } else {
-        element.textContent = text;
+    const { value, margin } = getProbabilityDisplay(odds, formatter);
+    element.classList.toggle('probability-range', margin !== null);
+    element.textContent = value;
+    if (margin !== null) {
+        const detail = document.createElement('span');
+        detail.className = 'probability-margin';
+        detail.textContent = `(±${margin})`;
+        element.append(' ', detail);
     }
 }
 
@@ -234,7 +231,7 @@ function selectSeatBin(index) {
     });
     const value = document.createElement('bdi');
     value.dir = 'ltr';
-    value.textContent = formatProbability(bin);
+    renderProbability(value, bin);
     seatDetail.replaceChildren(`${partyRangeDescription(bin)} · `, value,
         selectedParty.estimateSeatsFromVoteShare ? ' סיכוי (אומדן)' : ' סיכוי');
 }

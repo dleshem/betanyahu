@@ -17,7 +17,9 @@ default:
 Every market's probability uses the bid–ask midpoint, calculated directly as
 `(bestBid + bestAsk) / 2` from the Gamma event response. When the bid–ask spread is
 **5 percentage points or more**, the page displays the bid–ask range instead of
-the midpoint (for example, `30%–35%`). Smaller spreads display the midpoint.
+the midpoint alone. Ranges emphasize the midpoint with a smaller, muted margin
+in parentheses, rounded to the nearest whole percentage point (for example, bids
+and asks of `14%` and `30%` display as `22% (±8%)`). Smaller spreads display the midpoint.
 The cutoff uses unrounded quotes and includes exactly 5 percentage points.
 This applies to candidate odds, summaries, and party chart labels and details;
 bar heights still use midpoints. Quotes apply to the first outcome; the other
@@ -31,7 +33,9 @@ Merged estimated seat brackets also add their lower and upper bounds, capped
 at 100%. Calculated periods use the later deadline's lower bound minus the
 earlier deadline's upper bound, and the later upper bound minus the earlier
 lower bound, with negative endpoints clamped to zero. These derived bounds
-use the same 5-point display cutoff.
+use the same 5-point display cutoff. The displayed midpoint and margin are
+calculated from the final bounds before display rounding; their center can differ
+from the probability used for bar heights and calculations.
 
 All seven lists are loaded into memory together, so changing roles updates the
 📊 source link beside the dropdown and results immediately without fetching.

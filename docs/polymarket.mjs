@@ -54,11 +54,23 @@ export function isProbabilityRange({ lower, upper }) {
 }
 
 const percent = new Intl.NumberFormat('he-IL', { style: 'percent', maximumFractionDigits: 4 });
+const marginPercent = new Intl.NumberFormat('he-IL', { style: 'percent', maximumFractionDigits: 0 });
+
+export function getProbabilityDisplay(odds, formatter = percent) {
+    if (!isProbabilityRange(odds)) return { value: formatter.format(odds.probability), margin: null };
+    // Center on the displayed bounds, which may have been clamped or capped.
+    const midpoint = (odds.lower + odds.upper) / 2;
+    const margin = (odds.upper - odds.lower) / 2;
+    return {
+        value: formatter.format(midpoint),
+        // Avoid rounding an exact half point down because of subtraction error.
+        margin: marginPercent.format(margin + Number.EPSILON),
+    };
+}
 
 export function formatProbability(odds, formatter = percent) {
-    return isProbabilityRange(odds)
-        ? `${formatter.format(odds.lower)}–${formatter.format(odds.upper)}`
-        : formatter.format(odds.probability);
+    const { value, margin } = getProbabilityDisplay(odds, formatter);
+    return margin === null ? value : `${value} (±${margin})`;
 }
 
 function getBinaryProbabilities(market) {
