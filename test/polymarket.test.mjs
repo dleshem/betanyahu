@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
-    API_URL, ROLE_MARKETS, CANDIDATES_SLUG, DEFENSE_SLUG,
+    API_URL, ROLE_MARKETS, CANDIDATES_SLUG, DEFENSE_SLUG, SPEAKER_SLUG,
     DEFENSE_NO_APPOINTMENT_SLUG, CONFIDENCE_SLUG,
     HUNG_PARLIAMENT_SLUG, COALITION_SLUG, COALITION_NO_GOVERNMENT_SLUG,
     getCandidates, getRoleCandidates, getGovernmentOutcomes, getCoalitionOutcomes,
@@ -50,9 +50,9 @@ function snapshot() {
     ];
 }
 
-test('one request loads only the 10 events used by roles, government periods, and coalitions', () => {
+test('one request loads only the 11 events used by roles, government periods, and coalitions', () => {
     const events = snapshot();
-    assert.equal(events.length, 10);
+    assert.equal(events.length, 11);
     assert.deepEqual(new URL(API_URL).searchParams.getAll('slug').sort(), events.map(event => event.slug).sort());
     const roles = getRoleCandidates(events);
     assert.equal(roles.size, ROLE_MARKETS.length);
@@ -85,6 +85,23 @@ test('candidate ranking and the strict 1% cutoff use unrounded midpoints', () =>
     near(candidates[0].probability, 0.7);
     near(candidates[1].probability, 0.4);
     near(candidates[2].probability, 0.0101);
+});
+
+test('speaker candidates exclude missing-election outcomes and inactive placeholders while retaining candidate names and odds', () => {
+    const events = snapshot();
+    events.find(event => event.slug === SPEAKER_SLUG).markets = [
+        market({ groupItemTitle: 'Amir Ohana', bestBid: 0.1, bestAsk: 0.3 }),
+        market({ groupItemTitle: undefined, question: 'Will Ofir Katz be the next Speaker of the Knesset?', bestBid: 0.4, bestAsk: 0.6 }),
+        market({ slug: 'will-no-speaker-of-the-knesset-be-elected-by-february-28-20261019103128390', groupItemTitle: undefined, bestBid: null, bestAsk: null }),
+        market({ groupItemTitle: ' No speaker by Feb 28 ', bestBid: null, bestAsk: null }),
+        market({ groupItemTitle: 'Person 1', active: false, bestBid: null, bestAsk: null }),
+        market({ groupItemTitle: 'At cutoff', bestBid: 0.004, bestAsk: 0.016 }),
+    ];
+    const candidates = getRoleCandidates(events).get(SPEAKER_SLUG);
+    assert.deepEqual(candidates.map(candidate => candidate.name), ['Ofir Katz', 'Amir Ohana']);
+    near(candidates[0].probability, 0.5);
+    near(candidates[1].probability, 0.2);
+    assert.equal(formatProbability(candidates[0]), '50% (±10%)');
 });
 
 test('inconsistent deadline midpoints still clamp negative period differences to zero', () => {

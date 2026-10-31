@@ -13,6 +13,7 @@ default:
 | שר המשפטים | [Justice](https://polymarket.com/event/next-israeli-minister-of-justice) |
 | השר לביטחון לאומי | [National security](https://polymarket.com/event/next-israeli-minister-of-national-security) |
 | שר הפנים | [Interior](https://polymarket.com/event/next-israeli-minister-of-interior) |
+| יו״ר הכנסת | [Knesset speaker](https://polymarket.com/event/who-will-be-the-next-speaker-of-the-knesset-20261019103128390) |
 
 Every market's probability uses the bid–ask midpoint, calculated directly as
 `(bestBid + bestAsk) / 2` from the Gamma event response. When the bid–ask spread is
@@ -34,11 +35,12 @@ use the same 5-point display cutoff. The displayed midpoint and margin are
 calculated from the final bounds before display rounding; their center can differ
 from the probability used for ranking and calculations.
 
-All seven lists are loaded into memory together, so changing roles updates the
+All eight lists are loaded into memory together, so changing roles updates the
 📊 source link beside the dropdown and results immediately without fetching.
-The section title stays “הממשלה הבאה”. The PM choice reads “ראש הממשלה”; minister choices include
+The section title stays “הממשלה הבאה”. The PM choice reads “ראש הממשלה”; minister and speaker choices include
 “(עד 28 לפברואר 2027)”. The selection stays in place during refreshes. Minister
-lists omit the no-appointment outcome. Every remaining active outcome above 1%
+lists omit the no-appointment outcome; the speaker list omits “No speaker by Feb 28”.
+Every remaining active outcome above 1%
 is ranked by its unrounded **Yes** midpoint; the 1% cutoff is applied before display
 rounding.
 
@@ -70,7 +72,7 @@ outcomes are shown, including those at or below 1%, ordered by their unrounded
 **Yes** midpoints. The probabilities are not renormalized after excluding an
 outcome. The 📊 link beside the heading opens the coalition market.
 
-The browser fetches all 10 events in a single HTTP request to the
+The browser fetches all 11 events in a single HTTP request to the
 [Gamma `/events` endpoint](https://gamma-api.polymarket.com/events) with repeated
 `slug` query parameters and `limit=50`, on page load, every minute, and when the page becomes
 visible again. Events are matched by slug, regardless of response order.
