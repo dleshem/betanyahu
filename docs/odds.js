@@ -53,6 +53,14 @@ const names = new Map(Object.entries({
     "Meirav Cohen": "מירב כהן",
     "Michael Malchieli": "מיכאל מלכיאלי",
     "Yoav Ben-Tzur": "יואב בן צור",
+    "Eitan Ginzburg": "איתן גינזבורג",
+    "Merav Ben Ari": "מירב בן ארי",
+    "Ahmad Tibi": "אחמד טיבי",
+    "Mickey Levy": "מיקי לוי",
+    "Yuli Edelstein": "יולי אדלשטיין",
+    "David Amsalem": "דוד אמסלם",
+    "Miki Zohar": "מיקי זוהר",
+    "Orna Barbivai": "אורנה ברביבאי",
 }));
 
 const panel = document.querySelector('#odds-panel');

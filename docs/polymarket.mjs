@@ -1,15 +1,17 @@
 export const CANDIDATES_SLUG = 'who-will-be-the-next-prime-minister-of-israel-after-the-next-election';
 export const DEFENSE_SLUG = 'next-israeli-minister-of-defense';
 export const DEFENSE_NO_APPOINTMENT_SLUG = 'will-no-next-israeli-minister-of-defense-be-appointed-by-february-28-2027';
-const MINISTER_DEADLINE = ' (עד 28 לפברואר 2027)';
+export const SPEAKER_SLUG = 'who-will-be-the-next-speaker-of-the-knesset-20261019103128390';
+const ROLE_DEADLINE = ' (עד 28 לפברואר 2027)';
 export const ROLE_MARKETS = [
     { slug: CANDIDATES_SLUG, label: 'ראש הממשלה' },
-    { slug: DEFENSE_SLUG, label: `שר הביטחון${MINISTER_DEADLINE}` },
-    { slug: 'next-israeli-minister-of-foreign-affairs', label: `שר החוץ${MINISTER_DEADLINE}` },
-    { slug: 'next-israeli-minister-of-finance', label: `שר האוצר${MINISTER_DEADLINE}` },
-    { slug: 'next-israeli-minister-of-justice', label: `שר המשפטים${MINISTER_DEADLINE}` },
-    { slug: 'next-israeli-minister-of-national-security', label: `השר לביטחון לאומי${MINISTER_DEADLINE}` },
-    { slug: 'next-israeli-minister-of-interior', label: `שר הפנים${MINISTER_DEADLINE}` },
+    { slug: DEFENSE_SLUG, label: `שר הביטחון${ROLE_DEADLINE}` },
+    { slug: 'next-israeli-minister-of-foreign-affairs', label: `שר החוץ${ROLE_DEADLINE}` },
+    { slug: 'next-israeli-minister-of-finance', label: `שר האוצר${ROLE_DEADLINE}` },
+    { slug: 'next-israeli-minister-of-justice', label: `שר המשפטים${ROLE_DEADLINE}` },
+    { slug: 'next-israeli-minister-of-national-security', label: `השר לביטחון לאומי${ROLE_DEADLINE}` },
+    { slug: 'next-israeli-minister-of-interior', label: `שר הפנים${ROLE_DEADLINE}` },
+    { slug: SPEAKER_SLUG, label: `יו״ר הכנסת${ROLE_DEADLINE}` },
 ];
 export const CONFIDENCE_SLUG = 'vote-of-confidence-passes-in-knesset-by-december-31';
 export const HUNG_PARLIAMENT_SLUG = 'israeli-election-results-in-a-hung-parliament';
@@ -170,8 +172,8 @@ export function getCandidates(event, { omitNoAppointment = false } = {}) {
         if (!market || typeof market !== 'object') throw new Error('Invalid market');
         if (market.closed || market.archived || market.active === false) continue;
         if (omitNoAppointment && (
-            /^will-no-next-israeli-minister-/i.test(market.slug || '') ||
-            /^no (?:next minister|one)\b/i.test(String(market.groupItemTitle || '').trim())
+            /^will-no-(?:next-israeli-minister-|speaker-of-the-knesset-)/i.test(market.slug || '') ||
+            /^no (?:next minister|speaker|one)\b/i.test(String(market.groupItemTitle || '').trim())
         )) continue;
 
         const { yes: odds } = getBinaryProbabilities(market);
@@ -181,7 +183,7 @@ export function getCandidates(event, { omitNoAppointment = false } = {}) {
         let name = market.groupItemTitle;
         if (typeof name !== 'string' || !name.trim()) {
             name = typeof market.question === 'string'
-                ? market.question.match(/^Will (.+?) (?:be|become) (?:the )?next (?:prime minister|Israeli Minister of [^?]+)/i)?.[1]
+                ? market.question.match(/^Will (.+?) (?:be|become) (?:the )?next (?:prime minister|speaker of the Knesset|Israeli Minister of [^?]+)/i)?.[1]
                 : undefined;
         }
         if (!name) throw new Error('Missing candidate name');
