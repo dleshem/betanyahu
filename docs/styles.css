@@ -67,7 +67,7 @@ h1, h2 { margin: 0 0 14px; font-size: clamp(26px, 5vw, 34px); line-height: 1.35;
 .election-outcome { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 16px; padding: 16px 20px; border: 1px solid var(--divider-color); border-radius: 14px; background: var(--card-background); }
 .election-outcome dt { font-size: 20px; font-weight: 600; line-height: 1.5; }
 .election-outcome dd { margin: 0; color: var(--accent-color); }
-#government-outcomes abbr { text-decoration: none; }
+.period-outcomes abbr { text-decoration: none; }
 .section-description { margin: -4px 0 18px; color: var(--muted-color); font-size: 14px; line-height: 1.7; }
 .coalition-outcome dt { font-size: 16px; overflow-wrap: anywhere; }
 .coalition-outcome .probability { font-size: 26px; }
@@ -124,10 +124,10 @@ h1, h2 { margin: 0 0 14px; font-size: clamp(26px, 5vw, 34px); line-height: 1.35;
     .election-outcome dt { font-size: 18px; }
     .coalition-outcome, .election-outcome:has(.probability-range) { grid-template-columns: minmax(0, 1fr); gap: 8px; }
     .coalition-outcome dd { justify-self: end; }
-    #government-outcomes .election-outcome { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; padding: 12px; }
-    #government-outcomes dt { font-size: 16px; }
-    #government-outcomes .probability { font-size: clamp(18px, 5vw, 26px); }
-    #government-outcomes .market-link { min-width: 32px; font-size: 20px; }
+    .period-outcomes .election-outcome { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; padding: 12px; }
+    .period-outcomes dt { font-size: 16px; }
+    .period-outcomes .probability { font-size: clamp(18px, 5vw, 26px); }
+    .period-outcomes .market-link { min-width: 32px; font-size: 20px; }
     .candidate { grid-template-columns: 56px minmax(0, 1fr) auto; gap: 14px; padding: 20px 0; }
     .portrait { width: 56px; height: 56px; }
     .candidate-name { font-size: 18px; }

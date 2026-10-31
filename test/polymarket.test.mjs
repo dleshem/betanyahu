@@ -3,8 +3,8 @@ import test from 'node:test';
 import {
     API_URL, ROLE_MARKETS, CANDIDATES_SLUG, DEFENSE_SLUG, SPEAKER_SLUG,
     DEFENSE_NO_APPOINTMENT_SLUG, CONFIDENCE_SLUG,
-    HUNG_PARLIAMENT_SLUG, COALITION_SLUG, COALITION_NO_GOVERNMENT_SLUG,
-    getCandidates, getRoleCandidates, getGovernmentOutcomes, getCoalitionOutcomes,
+    HUNG_PARLIAMENT_SLUG, DISSOLUTION_SLUG, COALITION_SLUG, COALITION_NO_GOVERNMENT_SLUG,
+    getCandidates, getRoleCandidates, getGovernmentOutcomes, getDissolutionOutcomes, getCoalitionOutcomes,
     formatProbability, isProbabilityRange,
 } from '../docs/polymarket.mjs';
 
@@ -40,6 +40,12 @@ function snapshot() {
         ...roles,
         event(CONFIDENCE_SLUG, [market({ slug: CONFIDENCE_SLUG, bestBid: 0.2, bestAsk: 0.6 })]),
         event(HUNG_PARLIAMENT_SLUG, [market({ slug: HUNG_PARLIAMENT_SLUG, bestBid: 0.1, bestAsk: 0.2 })]),
+        // Deadlines deliberately arrive out of order; match their market slugs.
+        event(DISSOLUTION_SLUG, [
+            market({ slug: `${DISSOLUTION_SLUG}-december-31-2027`, bestBid: 0.59, bestAsk: 0.61 }),
+            market({ slug: `${DISSOLUTION_SLUG}-december-31-2026`, bestBid: 0.1, bestAsk: 0.14 }),
+            market({ slug: `${DISSOLUTION_SLUG}-march-31-2027`, bestBid: 0.3, bestAsk: 0.34 }),
+        ]),
         event(COALITION_SLUG, [
             market({ groupItemTitle: 'L + Y', bestBid: 0.1, bestAsk: 0.7 }),
             market({ groupItemTitle: 'Y + T + B + D', bestBid: 0.5, bestAsk: 0.9 }),
@@ -50,9 +56,9 @@ function snapshot() {
     ];
 }
 
-test('one request loads only the 11 events used by roles, government periods, and coalitions', () => {
+test('one request loads all 12 events used by the displayed sections', () => {
     const events = snapshot();
-    assert.equal(events.length, 11);
+    assert.equal(events.length, 12);
     assert.deepEqual(new URL(API_URL).searchParams.getAll('slug').sort(), events.map(event => event.slug).sort());
     const roles = getRoleCandidates(events);
     assert.equal(roles.size, ROLE_MARKETS.length);
@@ -65,6 +71,10 @@ test('one request loads only the 11 events used by roles, government periods, an
     near(government.januaryFebruary2027.probability, 0.4);
     near(government.marchJune2027.probability, 0.05);
     near(government.anotherElection.probability, 0.15);
+    const dissolution = getDissolutionOutcomes(events);
+    near(dissolution.octoberDecember2026.probability, 0.12);
+    near(dissolution.januaryMarch2027.probability, 0.2);
+    near(dissolution.aprilDecember2027.probability, 0.28);
     const coalitions = getCoalitionOutcomes(events);
     assert.deepEqual(coalitions.map(coalition => coalition.name), [
         'ישר! + ביחד + ישראל ביתנו + הדמוקרטים', 'הליכוד + ישר!', 'הרכב אחר',
@@ -191,6 +201,51 @@ test('all display sections carry the appropriate bid–ask bounds', () => {
     assert.equal(formatProbability(government.januaryFebruary2027), '40% (±30%)');
     assert.equal(formatProbability(government.marchJune2027), '10% (±10%)');
     assert.equal(formatProbability(government.anotherElection), '15% (±5%)');
+    const dissolution = getDissolutionOutcomes(events);
+    assert.equal(formatProbability(dissolution.octoberDecember2026), '12%');
+    assert.equal(formatProbability(dissolution.januaryMarch2027), '20% (±4%)');
+    assert.equal(formatProbability(dissolution.aprilDecember2027), '28% (±3%)');
+});
+
+test('dissolution periods subtract unrounded cumulative odds and retain their derived bounds without normalization', () => {
+    const events = snapshot();
+    const dissolution = getDissolutionOutcomes(events);
+    near(dissolution.januaryMarch2027.lower, 0.16);
+    near(dissolution.januaryMarch2027.upper, 0.24);
+    near(dissolution.aprilDecember2027.lower, 0.25);
+    near(dissolution.aprilDecember2027.upper, 0.31);
+    near(Object.values(dissolution).reduce((total, period) => total + period.probability, 0), 0.6);
+    const markets = events.find(event => event.slug === DISSOLUTION_SLUG).markets;
+    Object.assign(markets.find(market => market.slug.endsWith('december-31-2026')), { bestBid: 0.11111, bestAsk: 0.11111 });
+    Object.assign(markets.find(market => market.slug.endsWith('march-31-2027')), { bestBid: 0.23456, bestAsk: 0.23456 });
+    const period = getDissolutionOutcomes(events).januaryMarch2027;
+    near(period.probability, 0.12345);
+    assert.equal(formatProbability(period), '12.345%');
+});
+
+test('inconsistent dissolution deadlines clamp negative differences and range endpoints to zero', () => {
+    const events = snapshot();
+    const markets = events.find(event => event.slug === DISSOLUTION_SLUG).markets;
+    Object.assign(markets.find(market => market.slug.endsWith('december-31-2026')), { bestBid: 0.6, bestAsk: 0.7 });
+    Object.assign(markets.find(market => market.slug.endsWith('march-31-2027')), { bestBid: 0.2, bestAsk: 0.3 });
+    Object.assign(markets.find(market => market.slug.endsWith('december-31-2027')), { bestBid: 0.25, bestAsk: 0.4 });
+    const dissolution = getDissolutionOutcomes(events);
+    assert.deepEqual(dissolution.januaryMarch2027, { probability: 0, lower: 0, upper: 0 });
+    near(dissolution.aprilDecember2027.probability, 0.075);
+    assert.equal(dissolution.aprilDecember2027.lower, 0);
+    near(dissolution.aprilDecember2027.upper, 0.2);
+});
+
+test('missing or invalid dissolution deadlines fail validation before a refresh can replace the snapshot', () => {
+    for (const events of [null, {}, [], [event(DISSOLUTION_SLUG, [])]]) {
+        assert.throws(() => getDissolutionOutcomes(events));
+    }
+    for (const overrides of [{ active: false }, { archived: true }, { bestBid: null, bestAsk: null }, { bestBid: 0.8, bestAsk: 0.2 }]) {
+        const events = snapshot();
+        const markets = events.find(event => event.slug === DISSOLUTION_SLUG).markets;
+        Object.assign(markets.find(market => market.slug.endsWith('march-31-2027')), overrides);
+        assert.throws(() => getDissolutionOutcomes(events));
+    }
 });
 
 test('period ranges combine deadline bounds and clamp negative endpoints to zero', () => {

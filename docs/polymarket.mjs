@@ -15,13 +15,14 @@ export const ROLE_MARKETS = [
 ];
 export const CONFIDENCE_SLUG = 'vote-of-confidence-passes-in-knesset-by-december-31';
 export const HUNG_PARLIAMENT_SLUG = 'israeli-election-results-in-a-hung-parliament';
+export const DISSOLUTION_SLUG = 'next-israeli-election-called-by';
 export const COALITION_SLUG = 'next-israeli-government-coalition';
 export const COALITION_NO_GOVERNMENT_SLUG = 'will-no-israeli-government-be-formed-after-the-2026-knesset-vote';
 export const API_URL = `https://gamma-api.polymarket.com/events?${new URLSearchParams([
     ['limit', '50'],
     ...[
         ...ROLE_MARKETS.map(role => role.slug),
-        CONFIDENCE_SLUG, HUNG_PARLIAMENT_SLUG, COALITION_SLUG,
+        CONFIDENCE_SLUG, HUNG_PARLIAMENT_SLUG, DISSOLUTION_SLUG, COALITION_SLUG,
     ].map(slug => ['slug', slug]),
 ])}`;
 
@@ -98,6 +99,18 @@ export function getGovernmentOutcomes(events) {
         januaryFebruary2027: subtractProbabilities(noDefenseAppointment.no, confidence.yes),
         marchJune2027: subtractProbabilities(hungParliament.no, noDefenseAppointment.no),
         anotherElection: hungParliament.yes,
+    };
+}
+
+export function getDissolutionOutcomes(events) {
+    if (!Array.isArray(events)) throw new Error('Expected an array of events');
+    const december2026 = getEventProbabilities(events, DISSOLUTION_SLUG, `${DISSOLUTION_SLUG}-december-31-2026`).yes;
+    const march2027 = getEventProbabilities(events, DISSOLUTION_SLUG, `${DISSOLUTION_SLUG}-march-31-2027`).yes;
+    const december2027 = getEventProbabilities(events, DISSOLUTION_SLUG, `${DISSOLUTION_SLUG}-december-31-2027`).yes;
+    return {
+        octoberDecember2026: december2026,
+        januaryMarch2027: subtractProbabilities(march2027, december2026),
+        aprilDecember2027: subtractProbabilities(december2027, march2027),
     };
 }
 
