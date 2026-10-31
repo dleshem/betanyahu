@@ -1,4 +1,4 @@
-import { API_URL, ROLE_MARKETS, PARTY_MARKETS, DEFAULT_PARTY_SLUG, getRoleCandidates, getElectionOutcomes, getGovernmentOutcomes, getBlocOutcomes, getPartyDistributions, formatProbability, getProbabilityDisplay } from './polymarket.mjs';
+import { API_URL, ROLE_MARKETS, getRoleCandidates, getGovernmentOutcomes, getCoalitionOutcomes, getProbabilityDisplay } from './polymarket.mjs';
 
 const REFRESH_MS = 60_000;
 const names = new Map(Object.entries({
@@ -63,20 +63,6 @@ const roleSelectValue = document.querySelector('#role-select-value');
 const roleSource = document.querySelector('#role-source');
 const roleStatus = document.querySelector('#role-status');
 const emptyState = document.querySelector('#empty-state');
-const partyPanel = document.querySelector('#party-panel');
-const partySelect = document.querySelector('#party-select');
-const partySelectValue = document.querySelector('#party-select-value');
-const partyResults = document.querySelector('#party-results');
-const partySource = document.querySelector('#party-source');
-const partyLoading = document.querySelector('#party-loading');
-const seatBars = document.querySelector('#seat-bars');
-const seatDetail = document.querySelector('#seat-detail');
-const electionPanel = document.querySelector('#election-panel');
-const electionOutcomes = document.querySelector('#election-outcomes');
-const electionValues = {
-    onSchedule: document.querySelector('#election-on-schedule'),
-};
-const electionLoading = document.querySelector('#election-loading');
 const governmentPanel = document.querySelector('#government-panel');
 const governmentOutcomes = document.querySelector('#government-outcomes');
 const governmentValues = {
@@ -86,12 +72,9 @@ const governmentValues = {
     anotherElection: document.querySelector('#government-another-election'),
 };
 const governmentLoading = document.querySelector('#government-loading');
-const blocPanel = document.querySelector('#bloc-panel');
-const blocOutcomes = document.querySelector('#bloc-outcomes');
-const blocValues = {
-    majority: document.querySelector('#bloc-majority'),
-};
-const blocLoading = document.querySelector('#bloc-loading');
+const coalitionPanel = document.querySelector('#coalition-panel');
+const coalitionOutcomes = document.querySelector('#coalition-outcomes');
+const coalitionLoading = document.querySelector('#coalition-loading');
 const updates = document.querySelector('#updates');
 const refresh = document.querySelector('#refresh');
 const refreshLabel = document.querySelector('#refresh-label');
@@ -100,7 +83,6 @@ const lastUpdated = document.querySelector('#last-updated');
 const countdownLabel = document.querySelector('#countdown-label');
 const countdown = document.querySelector('#countdown');
 const updateError = document.querySelector('#update-error');
-const chartPercent = new Intl.NumberFormat('he-IL', { style: 'percent', maximumFractionDigits: 1 });
 const timeFormat = new Intl.DateTimeFormat('he-IL', { hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' });
 const dateFormat = new Intl.DateTimeFormat('he-IL', { day: 'numeric', month: 'long', year: 'numeric' });
 let loading = false;
@@ -109,9 +91,6 @@ let lastFetchedAt;
 let nextRefreshAt;
 let selectedRole = ROLE_MARKETS[0];
 let roleCandidates = new Map();
-let selectedParty = PARTY_MARKETS.find(party => party.slug === DEFAULT_PARTY_SLUG);
-let partyDistributions = new Map();
-let selectedSeatRange;
 
 roleSelect.replaceChildren(...ROLE_MARKETS.map(role => {
     const option = document.createElement('option');
@@ -120,13 +99,6 @@ roleSelect.replaceChildren(...ROLE_MARKETS.map(role => {
     return option;
 }));
 roleSelect.value = selectedRole.slug;
-partySelect.replaceChildren(...PARTY_MARKETS.map(party => {
-    const option = document.createElement('option');
-    option.value = party.slug;
-    option.textContent = party.label;
-    return option;
-}));
-partySelect.value = selectedParty.slug;
 
 function updateTimestamp() {
     if (!lastFetchedAt) return;
@@ -194,6 +166,23 @@ function renderProbability(element, odds, formatter) {
     }
 }
 
+function renderCoalitions(coalitions) {
+    const rows = document.createDocumentFragment();
+    coalitions.forEach(coalition => {
+        const row = document.createElement('div');
+        row.className = 'election-outcome coalition-outcome';
+        const name = document.createElement('dt');
+        name.textContent = coalition.name;
+        const probability = document.createElement('dd');
+        probability.className = 'probability';
+        renderProbability(probability, coalition);
+        row.append(name, probability);
+        rows.append(row);
+    });
+    coalitionOutcomes.replaceChildren(rows);
+    coalitionOutcomes.hidden = false;
+}
+
 function renderSelectedRole() {
     const candidates = roleCandidates.get(selectedRole.slug);
     if (!candidates) return;
@@ -215,74 +204,6 @@ function renderSelectedRole() {
     roleStatus.textContent = `מוצגות ${candidates.length} תוצאות עבור ${selectedRole.label}`;
 }
 
-function partyRangeDescription(bin) {
-    if (bin.label.startsWith('<')) return `פחות מ־${bin.max + 1} מנדטים`;
-    if (bin.label.endsWith('+')) return `${bin.min} מנדטים ומעלה`;
-    if (bin.min === bin.max) return `${bin.min} מנדטים`;
-    return `${bin.min} עד ${bin.max} מנדטים`;
-}
-
-function selectSeatBin(index) {
-    const bins = partyDistributions.get(selectedParty.slug);
-    const bin = bins[index];
-    selectedSeatRange = bin.label;
-    [...seatBars.children].forEach((button, buttonIndex) => {
-        button.setAttribute('aria-pressed', String(buttonIndex === index));
-    });
-    const value = document.createElement('bdi');
-    value.dir = 'ltr';
-    renderProbability(value, bin);
-    seatDetail.replaceChildren(`${partyRangeDescription(bin)} · `, value,
-        selectedParty.estimateSeatsFromVoteShare ? ' סיכוי (אומדן)' : ' סיכוי');
-}
-
-function renderSelectedParty() {
-    const bins = partyDistributions.get(selectedParty.slug);
-    if (!bins) return;
-    partySelectValue.textContent = selectedParty.label;
-    partyResults.setAttribute('aria-label', `התפלגות המנדטים של ${selectedParty.label}`);
-    partySource.href = `https://polymarket.com/event/${selectedParty.slug}`;
-    const measure = selectedParty.estimateSeatsFromVoteShare ? 'אחוז הקולות' : 'המנדטים';
-    const sourceLabel = `שוק ${measure} של ${selectedParty.label} בפולימרקט`;
-    partySource.setAttribute('aria-label', sourceLabel);
-    partySource.title = sourceLabel;
-    const bars = document.createDocumentFragment();
-    bins.forEach((bin, index) => {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'seat-bin';
-        button.style.setProperty('--probability', String(bin.probability));
-        const label = `${partyRangeDescription(bin)}: ${formatProbability(bin)}`;
-        button.setAttribute('aria-label', label);
-        button.title = label;
-        const track = document.createElement('span');
-        track.className = 'seat-bar-track';
-        track.setAttribute('aria-hidden', 'true');
-        const probability = document.createElement('span');
-        probability.className = 'seat-bar-value';
-        renderProbability(probability, bin, chartPercent);
-        const bar = document.createElement('span');
-        bar.className = 'seat-bar';
-        track.append(probability, bar);
-        const range = document.createElement('bdi');
-        range.className = 'seat-range';
-        range.textContent = bin.label;
-        range.setAttribute('aria-hidden', 'true');
-        button.append(track, range);
-        button.addEventListener('click', () => selectSeatBin(index));
-        bars.append(button);
-    });
-    seatBars.style.gridTemplateColumns = `repeat(${bins.length}, minmax(0, 1fr))`;
-    seatBars.replaceChildren(bars);
-    let selectedIndex = bins.findIndex(bin => bin.label === selectedSeatRange);
-    if (selectedIndex < 0) {
-        selectedIndex = bins.reduce((best, bin, index) => bin.probability > bins[best].probability ? index : best, 0);
-    }
-    selectSeatBin(selectedIndex);
-    partyResults.hidden = false;
-    partyLoading.hidden = true;
-}
-
 async function loadOdds() {
     if (loading) return;
     loading = true;
@@ -296,15 +217,11 @@ async function loadOdds() {
     updateError.hidden = true;
     if (!lastFetchedAt) initialStatus.textContent = 'טוענים את הנתונים…';
     loadingIndicator.hidden = roleCandidates.has(selectedRole.slug);
-    electionLoading.hidden = !electionOutcomes.hidden;
     governmentLoading.hidden = !governmentOutcomes.hidden;
-    blocLoading.hidden = !blocOutcomes.hidden;
-    partyLoading.hidden = partyDistributions.has(selectedParty.slug);
+    coalitionLoading.hidden = !coalitionOutcomes.hidden;
     panel.setAttribute('aria-busy', 'true');
-    electionPanel.setAttribute('aria-busy', 'true');
     governmentPanel.setAttribute('aria-busy', 'true');
-    blocPanel.setAttribute('aria-busy', 'true');
-    partyPanel.setAttribute('aria-busy', 'true');
+    coalitionPanel.setAttribute('aria-busy', 'true');
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15_000);
     try {
@@ -313,28 +230,16 @@ async function loadOdds() {
         const events = await response.json();
         if (!Array.isArray(events)) throw new Error('Expected an array of events');
         const candidatesByRole = getRoleCandidates(events);
-        const election = getElectionOutcomes(events);
         const government = getGovernmentOutcomes(events);
-        const bloc = getBlocOutcomes(events);
-        const distributions = getPartyDistributions(events);
+        const coalitions = getCoalitionOutcomes(events);
         roleCandidates = candidatesByRole;
-        partyDistributions = distributions;
         renderSelectedRole();
-        renderSelectedParty();
+        renderCoalitions(coalitions);
         roleSelect.disabled = false;
-        partySelect.disabled = false;
-        Object.entries(electionValues).forEach(([key, element]) => {
-            renderProbability(element, election[key]);
-        });
-        electionOutcomes.hidden = false;
         Object.entries(governmentValues).forEach(([key, element]) => {
             renderProbability(element, government[key]);
         });
         governmentOutcomes.hidden = false;
-        Object.entries(blocValues).forEach(([key, element]) => {
-            renderProbability(element, bloc[key]);
-        });
-        blocOutcomes.hidden = false;
         lastFetchedAt = new Date();
         lastUpdated.dateTime = lastFetchedAt.toISOString();
         lastUpdated.title = `${dateFormat.format(lastFetchedAt)}, ${timeFormat.format(lastFetchedAt)}`;
@@ -354,15 +259,11 @@ async function loadOdds() {
         clearTimeout(timeout);
         loading = false;
         loadingIndicator.hidden = true;
-        electionLoading.hidden = true;
         governmentLoading.hidden = true;
-        blocLoading.hidden = true;
-        partyLoading.hidden = true;
+        coalitionLoading.hidden = true;
         panel.setAttribute('aria-busy', 'false');
-        electionPanel.setAttribute('aria-busy', 'false');
         governmentPanel.setAttribute('aria-busy', 'false');
-        blocPanel.setAttribute('aria-busy', 'false');
-        partyPanel.setAttribute('aria-busy', 'false');
+        coalitionPanel.setAttribute('aria-busy', 'false');
         refresh.disabled = false;
         refreshLabel.textContent = 'עדכון עכשיו';
         countdownLabel.textContent = 'העדכון הבא בעוד';
@@ -378,13 +279,6 @@ roleSelect.addEventListener('change', () => {
     if (!role || !roleCandidates.has(role.slug)) return;
     selectedRole = role;
     renderSelectedRole();
-});
-partySelect.addEventListener('change', () => {
-    const party = PARTY_MARKETS.find(party => party.slug === partySelect.value);
-    if (!party || !partyDistributions.has(party.slug)) return;
-    selectedParty = party;
-    selectedSeatRange = undefined;
-    renderSelectedParty();
 });
 refresh.addEventListener('click', loadOdds);
 document.addEventListener('visibilitychange', () => {
