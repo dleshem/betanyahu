@@ -1,4 +1,4 @@
-import { API_URL, ROLE_MARKETS, getRoleCandidates, getGovernmentOutcomes, getCoalitionOutcomes, getProbabilityDisplay } from './polymarket.mjs';
+import { API_URL, ROLE_MARKETS, getRoleCandidates, getGovernmentOutcomes, getDissolutionOutcomes, getCoalitionOutcomes, getProbabilityDisplay } from './polymarket.mjs';
 
 const REFRESH_MS = 60_000;
 const names = new Map(Object.entries({
@@ -80,6 +80,14 @@ const governmentValues = {
     anotherElection: document.querySelector('#government-another-election'),
 };
 const governmentLoading = document.querySelector('#government-loading');
+const dissolutionPanel = document.querySelector('#dissolution-panel');
+const dissolutionOutcomes = document.querySelector('#dissolution-outcomes');
+const dissolutionValues = {
+    octoberDecember2026: document.querySelector('#dissolution-october-december-2026'),
+    januaryMarch2027: document.querySelector('#dissolution-january-march-2027'),
+    aprilDecember2027: document.querySelector('#dissolution-april-december-2027'),
+};
+const dissolutionLoading = document.querySelector('#dissolution-loading');
 const coalitionPanel = document.querySelector('#coalition-panel');
 const coalitionOutcomes = document.querySelector('#coalition-outcomes');
 const coalitionLoading = document.querySelector('#coalition-loading');
@@ -226,9 +234,11 @@ async function loadOdds() {
     if (!lastFetchedAt) initialStatus.textContent = 'טוענים את הנתונים…';
     loadingIndicator.hidden = roleCandidates.has(selectedRole.slug);
     governmentLoading.hidden = !governmentOutcomes.hidden;
+    dissolutionLoading.hidden = !dissolutionOutcomes.hidden;
     coalitionLoading.hidden = !coalitionOutcomes.hidden;
     panel.setAttribute('aria-busy', 'true');
     governmentPanel.setAttribute('aria-busy', 'true');
+    dissolutionPanel.setAttribute('aria-busy', 'true');
     coalitionPanel.setAttribute('aria-busy', 'true');
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15_000);
@@ -239,6 +249,7 @@ async function loadOdds() {
         if (!Array.isArray(events)) throw new Error('Expected an array of events');
         const candidatesByRole = getRoleCandidates(events);
         const government = getGovernmentOutcomes(events);
+        const dissolution = getDissolutionOutcomes(events);
         const coalitions = getCoalitionOutcomes(events);
         roleCandidates = candidatesByRole;
         renderSelectedRole();
@@ -248,6 +259,10 @@ async function loadOdds() {
             renderProbability(element, government[key]);
         });
         governmentOutcomes.hidden = false;
+        Object.entries(dissolutionValues).forEach(([key, element]) => {
+            renderProbability(element, dissolution[key]);
+        });
+        dissolutionOutcomes.hidden = false;
         lastFetchedAt = new Date();
         lastUpdated.dateTime = lastFetchedAt.toISOString();
         lastUpdated.title = `${dateFormat.format(lastFetchedAt)}, ${timeFormat.format(lastFetchedAt)}`;
@@ -268,9 +283,11 @@ async function loadOdds() {
         loading = false;
         loadingIndicator.hidden = true;
         governmentLoading.hidden = true;
+        dissolutionLoading.hidden = true;
         coalitionLoading.hidden = true;
         panel.setAttribute('aria-busy', 'false');
         governmentPanel.setAttribute('aria-busy', 'false');
+        dissolutionPanel.setAttribute('aria-busy', 'false');
         coalitionPanel.setAttribute('aria-busy', 'false');
         refresh.disabled = false;
         refreshLabel.textContent = 'עדכון עכשיו';

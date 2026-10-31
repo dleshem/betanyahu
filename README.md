@@ -62,7 +62,24 @@ and 38%.
 The February deadline value is read directly by market slug from the already-fetched
 defense event, independently of the role list's 1% cutoff.
 
-Immediately after “הכרעה”, “קואליציה” lists the active outcomes from
+Immediately after “הכרעה”, “פיזור הכנסת” shows non-cumulative probabilities from
+[the next election called market](https://polymarket.com/event/next-israeli-election-called-by).
+The trigger is the formal dissolution of the Knesset or official scheduling of a
+snap election. Each row has a 📊 source link and abbreviated months:
+
+| Label | Calculation using cumulative **Yes** odds |
+| --- | --- |
+| אוק׳–דצמ׳ 2026 | By December 31, 2026 |
+| ינו׳–מרץ 2027 | By March 31, 2027, minus by December 31, 2026 |
+| אפר׳–דצמ׳ 2027 | By December 31, 2027, minus by March 31, 2027 |
+
+The first period starts at market creation on October 30, 2026. Later periods
+subtract the previous deadline's unrounded midpoint and combine quote bounds in
+the same way as “הכרעה”. Negative differences and bounds are clamped to zero;
+the three values are not renormalized. All three deadlines must validate before
+any section updates.
+
+After “פיזור הכנסת”, “קואליציה” lists the active outcomes from
 [the next government coalition market](https://polymarket.com/event/next-israeli-government-coalition).
 Its short description explains that the first government must be approved by the
 current, 26th Knesset, without another election. Party codes expand to Hebrew
@@ -72,7 +89,7 @@ outcomes are shown, including those at or below 1%, ordered by their unrounded
 **Yes** midpoints. The probabilities are not renormalized after excluding an
 outcome. The 📊 link beside the heading opens the coalition market.
 
-The browser fetches all 11 events in a single HTTP request to the
+The browser fetches all 12 events in a single HTTP request to the
 [Gamma `/events` endpoint](https://gamma-api.polymarket.com/events) with repeated
 `slug` query parameters and `limit=50`, on page load, every minute, and when the page becomes
 visible again. Events are matched by slug, regardless of response order.
