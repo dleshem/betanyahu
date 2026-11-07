@@ -2,8 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
     API_URL, ROLE_MARKETS, CANDIDATES_SLUG, DEFENSE_SLUG, SPEAKER_SLUG,
-    DEFENSE_NO_APPOINTMENT_SLUG, CONFIDENCE_SLUG,
-    HUNG_PARLIAMENT_SLUG, DISSOLUTION_SLUG, COALITION_SLUG, COALITION_NO_GOVERNMENT_SLUG,
+    GOVERNMENT_SLUG, DISSOLUTION_SLUG, COALITION_SLUG, COALITION_NO_GOVERNMENT_SLUG,
     getCandidates, getRoleCandidates, getGovernmentOutcomes, getDissolutionOutcomes, getCoalitionOutcomes,
     formatProbability, isProbabilityRange,
 } from '../docs/polymarket.mjs';
@@ -30,16 +29,14 @@ function near(actual, expected) {
 
 function snapshot() {
     const roles = ROLE_MARKETS.map(role => event(role.slug, [market()]));
-    roles.find(role => role.slug === DEFENSE_SLUG).markets.push(market({
-        slug: DEFENSE_NO_APPOINTMENT_SLUG,
-        groupItemTitle: 'No Next Minister by Feb 28',
-        bestBid: 0.1,
-        bestAsk: 0.3,
-    }));
     return [
         ...roles,
-        event(CONFIDENCE_SLUG, [market({ slug: CONFIDENCE_SLUG, bestBid: 0.2, bestAsk: 0.6 })]),
-        event(HUNG_PARLIAMENT_SLUG, [market({ slug: HUNG_PARLIAMENT_SLUG, bestBid: 0.1, bestAsk: 0.2 })]),
+        event(GOVERNMENT_SLUG, [
+            market({ slug: `${GOVERNMENT_SLUG}-june-30-2027`, bestBid: 0.8, bestAsk: 0.9 }),
+            market({ slug: `${GOVERNMENT_SLUG}-november-30-2026`, bestBid: 0.1, bestAsk: 0.3 }),
+            market({ slug: `${GOVERNMENT_SLUG}-february-28-2027`, bestBid: 0.7, bestAsk: 0.9 }),
+            market({ slug: `${GOVERNMENT_SLUG}-december-31-2026`, bestBid: 0.2, bestAsk: 0.6 }),
+        ]),
         // Deadlines deliberately arrive out of order; match their market slugs.
         event(DISSOLUTION_SLUG, [
             market({ slug: `${DISSOLUTION_SLUG}-december-31-2027`, bestBid: 0.59, bestAsk: 0.61 }),
@@ -56,9 +53,9 @@ function snapshot() {
     ];
 }
 
-test('one request loads all 12 events used by the displayed sections', () => {
+test('one request loads all 11 events used by the displayed sections', () => {
     const events = snapshot();
-    assert.equal(events.length, 12);
+    assert.equal(events.length, 11);
     assert.deepEqual(new URL(API_URL).searchParams.getAll('slug').sort(), events.map(event => event.slug).sort());
     const roles = getRoleCandidates(events);
     assert.equal(roles.size, ROLE_MARKETS.length);
@@ -67,10 +64,10 @@ test('one request loads all 12 events used by the displayed sections', () => {
         near(candidates[0].probability, 0.3);
     }
     const government = getGovernmentOutcomes(events);
-    near(government.novemberDecember2026.probability, 0.4);
+    near(government.november2026.probability, 0.2);
+    near(government.december2026.probability, 0.2);
     near(government.januaryFebruary2027.probability, 0.4);
     near(government.marchJune2027.probability, 0.05);
-    near(government.anotherElection.probability, 0.15);
     const dissolution = getDissolutionOutcomes(events);
     near(dissolution.octoberDecember2026.probability, 0.12);
     near(dissolution.januaryMarch2027.probability, 0.2);
@@ -116,9 +113,9 @@ test('speaker candidates exclude missing-election outcomes and inactive placehol
 
 test('inconsistent deadline midpoints still clamp negative period differences to zero', () => {
     const events = snapshot();
-    Object.assign(events.find(event => event.slug === CONFIDENCE_SLUG).markets[0], { bestBid: 0.8, bestAsk: 0.9 });
-    Object.assign(events.find(event => event.slug === DEFENSE_SLUG).markets[1], { bestBid: 0.5, bestAsk: 0.7 });
-    Object.assign(events.find(event => event.slug === HUNG_PARLIAMENT_SLUG).markets[0], { bestBid: 0.8, bestAsk: 0.9 });
+    Object.assign(events.find(event => event.slug === GOVERNMENT_SLUG).markets.find(market => market.slug.endsWith('december-31-2026')), { bestBid: 0.8, bestAsk: 0.9 });
+    Object.assign(events.find(event => event.slug === GOVERNMENT_SLUG).markets.find(market => market.slug.endsWith('february-28-2027')), { bestBid: 0.3, bestAsk: 0.5 });
+    Object.assign(events.find(event => event.slug === GOVERNMENT_SLUG).markets.find(market => market.slug.endsWith('june-30-2027')), { bestBid: 0.1, bestAsk: 0.2 });
     const government = getGovernmentOutcomes(events);
     assert.equal(government.januaryFebruary2027.probability, 0);
     assert.equal(government.marchJune2027.probability, 0);
@@ -197,10 +194,10 @@ test('all display sections carry the appropriate bid–ask bounds', () => {
     assert.equal(formatProbability(coalitions[1]), '40% (±30%)');
     assert.equal(formatProbability(coalitions[2]), '0.5%');
     const government = getGovernmentOutcomes(events);
-    assert.equal(formatProbability(government.novemberDecember2026), '40% (±20%)');
+    assert.equal(formatProbability(government.november2026), '20% (±10%)');
+    assert.equal(formatProbability(government.december2026), '25% (±25%)');
     assert.equal(formatProbability(government.januaryFebruary2027), '40% (±30%)');
     assert.equal(formatProbability(government.marchJune2027), '10% (±10%)');
-    assert.equal(formatProbability(government.anotherElection), '15% (±5%)');
     const dissolution = getDissolutionOutcomes(events);
     assert.equal(formatProbability(dissolution.octoberDecember2026), '12%');
     assert.equal(formatProbability(dissolution.januaryMarch2027), '20% (±4%)');
@@ -250,12 +247,12 @@ test('missing or invalid dissolution deadlines fail validation before a refresh 
 
 test('period ranges combine deadline bounds and clamp negative endpoints to zero', () => {
     const events = snapshot();
-    Object.assign(events.find(event => event.slug === CONFIDENCE_SLUG).markets[0], { bestBid: 0.4, bestAsk: 0.43 });
-    Object.assign(events.find(event => event.slug === DEFENSE_SLUG).markets[1], { bestBid: 0.4, bestAsk: 0.43 });
+    Object.assign(events.find(event => event.slug === GOVERNMENT_SLUG).markets.find(market => market.slug.endsWith('december-31-2026')), { bestBid: 0.4, bestAsk: 0.43 });
+    Object.assign(events.find(event => event.slug === GOVERNMENT_SLUG).markets.find(market => market.slug.endsWith('february-28-2027')), { bestBid: 0.57, bestAsk: 0.6 });
     const government = getGovernmentOutcomes(events);
     // Both source spreads are below 5%, but their difference spans six points.
     assert.equal(formatProbability(government.januaryFebruary2027), '17% (±3%)');
-    Object.assign(events.find(event => event.slug === CONFIDENCE_SLUG).markets[0], { bestBid: 0.7, bestAsk: 0.9 });
+    Object.assign(events.find(event => event.slug === GOVERNMENT_SLUG).markets.find(market => market.slug.endsWith('december-31-2026')), { bestBid: 0.7, bestAsk: 0.9 });
     const clamped = getGovernmentOutcomes(events).januaryFebruary2027;
     assert.deepEqual(clamped, { probability: 0, lower: 0, upper: 0 });
 });
@@ -283,4 +280,15 @@ test('missing or invalid coalition data fails validation so refresh can retain t
     ]) {
         assert.throws(() => getCoalitionOutcomes(events));
     }
+});
+
+test('missing government deadlines and invalid quotes reject a partial refresh', () => {
+    for (const overrides of [{ active: false }, { archived: true }, { bestBid: null, bestAsk: null }]) {
+        const events = snapshot();
+        Object.assign(events.find(event => event.slug === GOVERNMENT_SLUG).markets[0], overrides);
+        assert.throws(() => getGovernmentOutcomes(events));
+    }
+    const events = snapshot();
+    events.find(event => event.slug === GOVERNMENT_SLUG).markets.pop();
+    assert.throws(() => getGovernmentOutcomes(events));
 });

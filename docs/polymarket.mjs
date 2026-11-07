@@ -1,6 +1,5 @@
 export const CANDIDATES_SLUG = 'who-will-be-the-next-prime-minister-of-israel-after-the-next-election';
 export const DEFENSE_SLUG = 'next-israeli-minister-of-defense';
-export const DEFENSE_NO_APPOINTMENT_SLUG = 'will-no-next-israeli-minister-of-defense-be-appointed-by-february-28-2027';
 export const SPEAKER_SLUG = 'who-will-be-the-next-speaker-of-the-knesset-20261019103128390';
 const ROLE_DEADLINE = ' (עד 28 לפברואר 2027)';
 export const ROLE_MARKETS = [
@@ -13,8 +12,7 @@ export const ROLE_MARKETS = [
     { slug: 'next-israeli-minister-of-interior', label: `שר הפנים${ROLE_DEADLINE}` },
     { slug: SPEAKER_SLUG, label: `יו״ר הכנסת${ROLE_DEADLINE}` },
 ];
-export const CONFIDENCE_SLUG = 'vote-of-confidence-passes-in-knesset-by-december-31';
-export const HUNG_PARLIAMENT_SLUG = 'israeli-election-results-in-a-hung-parliament';
+export const GOVERNMENT_SLUG = 'next-israeli-government-formed-by';
 export const DISSOLUTION_SLUG = 'next-israeli-election-called-by';
 export const COALITION_SLUG = 'next-israeli-government-coalition';
 export const COALITION_NO_GOVERNMENT_SLUG = 'will-no-israeli-government-be-formed-after-the-2026-knesset-vote';
@@ -22,7 +20,7 @@ export const API_URL = `https://gamma-api.polymarket.com/events?${new URLSearchP
     ['limit', '50'],
     ...[
         ...ROLE_MARKETS.map(role => role.slug),
-        CONFIDENCE_SLUG, HUNG_PARLIAMENT_SLUG, DISSOLUTION_SLUG, COALITION_SLUG,
+        GOVERNMENT_SLUG, DISSOLUTION_SLUG, COALITION_SLUG,
     ].map(slug => ['slug', slug]),
 ])}`;
 
@@ -91,14 +89,15 @@ function getEventProbabilities(events, slug, marketSlug = slug) {
 
 export function getGovernmentOutcomes(events) {
     if (!Array.isArray(events)) throw new Error('Expected an array of events');
-    const confidence = getEventProbabilities(events, CONFIDENCE_SLUG);
-    const noDefenseAppointment = getEventProbabilities(events, DEFENSE_SLUG, DEFENSE_NO_APPOINTMENT_SLUG);
-    const hungParliament = getEventProbabilities(events, HUNG_PARLIAMENT_SLUG);
+    const november2026 = getEventProbabilities(events, GOVERNMENT_SLUG, `${GOVERNMENT_SLUG}-november-30-2026`).yes;
+    const december2026 = getEventProbabilities(events, GOVERNMENT_SLUG, `${GOVERNMENT_SLUG}-december-31-2026`).yes;
+    const february2027 = getEventProbabilities(events, GOVERNMENT_SLUG, `${GOVERNMENT_SLUG}-february-28-2027`).yes;
+    const june2027 = getEventProbabilities(events, GOVERNMENT_SLUG, `${GOVERNMENT_SLUG}-june-30-2027`).yes;
     return {
-        novemberDecember2026: confidence.yes,
-        januaryFebruary2027: subtractProbabilities(noDefenseAppointment.no, confidence.yes),
-        marchJune2027: subtractProbabilities(hungParliament.no, noDefenseAppointment.no),
-        anotherElection: hungParliament.yes,
+        november2026,
+        december2026: subtractProbabilities(december2026, november2026),
+        januaryFebruary2027: subtractProbabilities(february2027, december2026),
+        marchJune2027: subtractProbabilities(june2027, february2027),
     };
 }
 

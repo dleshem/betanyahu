@@ -44,25 +44,23 @@ Every remaining active outcome above 1%
 is ranked by its unrounded **Yes** midpoint; the 1% cutoff is applied before display
 rounding.
 
-The first section, “הכרעה”, shows non-cumulative probabilities for each period,
-plus the probability of another election. Each row has a 📊 source link:
+The first section, “ממשלה חדשה”, shows non-cumulative probabilities from
+[the next government formed market](https://polymarket.com/event/next-israeli-government-formed-by).
+Each row has a 📊 source link:
 
-| Label | Market outcome |
+| Label | Calculation using cumulative **Yes** odds |
 | --- | --- |
-| נוב׳–דצמ׳ 2026 | **Yes** from [the confidence vote market](https://polymarket.com/event/vote-of-confidence-passes-in-knesset-by-december-31) |
-| ינו׳–פבר׳ 2027 | **No** from the “No Next Minister by Feb 28” outcome in [the defense minister event](https://polymarket.com/event/next-israeli-minister-of-defense), minus the confidence vote **Yes** price |
-| מרץ–יוני 2027 | **No** from [the hung parliament market](https://polymarket.com/event/israeli-election-results-in-a-hung-parliament), minus the defense market's “No Next Minister by Feb 28” **No** price |
-| בחירות חוזרות | **Yes** from [the hung parliament market](https://polymarket.com/event/israeli-election-results-in-a-hung-parliament) |
+| נובמבר 2026 | By November 30, 2026 |
+| דצמבר 2026 | By December 31, 2026, minus by November 30, 2026 |
+| ינו׳–פבר׳ 2027 | By February 28, 2027, minus by December 31, 2026 |
+| מרץ–יוני 2027 | By June 30, 2027, minus by February 28, 2027 |
 
-Period differences use the midpoint probabilities before display rounding. Since these
-deadlines are priced in separate markets, any negative difference is displayed as
-zero; the four values are not renormalized. For example, cumulative deadline odds
-of 48%, 59.1%, and 62% with a 38% repeat-election price display as 48%, 11.1%, 2.9%,
-and 38%.
-The February deadline value is read directly by market slug from the already-fetched
-defense event, independently of the role list's 1% cutoff.
+Period differences use unrounded midpoint probabilities and combine quote bounds.
+Negative differences and bounds are clamped to zero; values are not renormalized.
+For example, cumulative odds of 18%, 45%, 69%, and 82% produce period odds of
+18%, 27%, 24%, and 13%. All four deadlines must validate before any section updates.
 
-Immediately after “הכרעה”, “פיזור הכנסת” shows non-cumulative probabilities from
+Immediately after “ממשלה חדשה”, “פיזור הכנסת” shows non-cumulative probabilities from
 [the next election called market](https://polymarket.com/event/next-israeli-election-called-by).
 The trigger is the formal dissolution of the Knesset or official scheduling of a
 snap election. Each row has a 📊 source link and abbreviated months:
@@ -75,7 +73,7 @@ snap election. Each row has a 📊 source link and abbreviated months:
 
 The first period starts at market creation on October 30, 2026. Later periods
 subtract the previous deadline's unrounded midpoint and combine quote bounds in
-the same way as “הכרעה”. Negative differences and bounds are clamped to zero;
+the same way as “ממשלה חדשה”. Negative differences and bounds are clamped to zero;
 the three values are not renormalized. All three deadlines must validate before
 any section updates.
 
@@ -89,7 +87,7 @@ outcomes are shown, including those at or below 1%, ordered by their unrounded
 **Yes** midpoints. The probabilities are not renormalized after excluding an
 outcome. The 📊 link beside the heading opens the coalition market.
 
-The browser fetches all 12 events in a single HTTP request to the
+The browser fetches all 11 events in a single HTTP request to the
 [Gamma `/events` endpoint](https://gamma-api.polymarket.com/events) with repeated
 `slug` query parameters and `limit=50`, on page load, every minute, and when the page becomes
 visible again. Events are matched by slug, regardless of response order.
