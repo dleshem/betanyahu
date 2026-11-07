@@ -46,7 +46,7 @@ rounding.
 
 The first section, “ממשלה חדשה”, shows non-cumulative probabilities from
 [the next government formed market](https://polymarket.com/event/next-israeli-government-formed-by).
-Each row has a 📊 source link:
+The 📊 source link beside the section title opens the market:
 
 | Label | Calculation using cumulative **Yes** odds |
 | --- | --- |
@@ -63,7 +63,8 @@ For example, cumulative odds of 18%, 45%, 69%, and 82% produce period odds of
 Immediately after “ממשלה חדשה”, “פיזור הכנסת” shows non-cumulative probabilities from
 [the next election called market](https://polymarket.com/event/next-israeli-election-called-by).
 The trigger is the formal dissolution of the Knesset or official scheduling of a
-snap election. Each row has a 📊 source link and abbreviated months:
+snap election. The 📊 source link beside the section title opens the market;
+rows use abbreviated months:
 
 | Label | Calculation using cumulative **Yes** odds |
 | --- | --- |
