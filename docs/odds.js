@@ -74,10 +74,10 @@ const emptyState = document.querySelector('#empty-state');
 const governmentPanel = document.querySelector('#government-panel');
 const governmentOutcomes = document.querySelector('#government-outcomes');
 const governmentValues = {
-    novemberDecember2026: document.querySelector('#government-november-december-2026'),
+    november2026: document.querySelector('#government-november-2026'),
+    december2026: document.querySelector('#government-december-2026'),
     januaryFebruary2027: document.querySelector('#government-january-february-2027'),
     marchJune2027: document.querySelector('#government-march-june-2027'),
-    anotherElection: document.querySelector('#government-another-election'),
 };
 const governmentLoading = document.querySelector('#government-loading');
 const dissolutionPanel = document.querySelector('#dissolution-panel');
