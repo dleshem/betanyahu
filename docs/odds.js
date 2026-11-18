@@ -71,6 +71,7 @@ const roleSelectValue = document.querySelector('#role-select-value');
 const roleSource = document.querySelector('#role-source');
 const roleStatus = document.querySelector('#role-status');
 const emptyState = document.querySelector('#empty-state');
+const noCandidatesText = emptyState.textContent;
 const governmentPanel = document.querySelector('#government-panel');
 const governmentOutcomes = document.querySelector('#government-outcomes');
 const governmentValues = {
@@ -200,8 +201,8 @@ function renderCoalitions(coalitions) {
 }
 
 function renderSelectedRole() {
-    const candidates = roleCandidates.get(selectedRole.slug);
-    if (!candidates) return;
+    const result = roleCandidates.get(selectedRole.slug);
+    if (result === undefined) return;
     roleSelectValue.textContent = selectedRole.label;
     const deadlineStart = selectedRole.label.indexOf(' (');
     if (deadlineStart >= 0) {
@@ -214,10 +215,14 @@ function renderSelectedRole() {
     const sourceLabel = `שוק ${selectedRole.label} בפולימרקט`;
     roleSource.setAttribute('aria-label', sourceLabel);
     roleSource.title = sourceLabel;
+    const marketClosed = result === null;
+    const candidates = result ?? [];
     render(candidates);
+    emptyState.textContent = marketClosed ? 'השוק נסגר בפולימרקט.' : noCandidatesText;
     emptyState.hidden = candidates.length > 0;
     loadingIndicator.hidden = true;
-    roleStatus.textContent = `מוצגות ${candidates.length} תוצאות עבור ${selectedRole.label}`;
+    roleStatus.textContent = marketClosed ? emptyState.textContent
+        : `מוצגות ${candidates.length} תוצאות עבור ${selectedRole.label}`;
 }
 
 async function loadOdds() {

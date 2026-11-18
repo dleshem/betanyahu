@@ -15,7 +15,7 @@ default:
 | שר הפנים | [Interior](https://polymarket.com/event/next-israeli-minister-of-interior) |
 | יו״ר הכנסת | [Knesset speaker](https://polymarket.com/event/who-will-be-the-next-speaker-of-the-knesset-20261019103128390) |
 
-Every market's probability uses the bid–ask midpoint, calculated directly as
+Every live market's probability uses the bid–ask midpoint, calculated directly as
 `(bestBid + bestAsk) / 2` from the Gamma event response. When the bid–ask spread is
 **5 percentage points or more**, the page displays the bid–ask range instead of
 the midpoint alone. Ranges emphasize the midpoint with a smaller, muted margin
@@ -24,7 +24,8 @@ and asks of `14%` and `30%` display as `22% (±8%)`). Smaller spreads display th
 The cutoff uses unrounded quotes and includes exactly 5 percentage points.
 This applies to candidate odds, government periods, and coalition odds. Quotes
 apply to the first outcome; the other outcome uses `1 - midpoint` with range bounds `1 - ask` and `1 - bid`.
-The reported `outcomePrices` and last trade price are not used. A missing bid
+When Polymarket marks a market resolved, the final payout from `outcomePrices`
+is displayed with zero spread. A missing live bid
 uses the lower price bound of 0; a missing ask uses the upper bound of 1.
 An empty book, invalid quotes, or a bid above the ask fails the refresh and
 retains the previous data. All filtering, ranking, and period differences use
@@ -35,14 +36,14 @@ use the same 5-point display cutoff. The displayed midpoint and margin are
 calculated from the final bounds before display rounding; their center can differ
 from the probability used for ranking and calculations.
 
-All eight lists are loaded into memory together, so changing roles updates the
-📊 source link beside the dropdown and results immediately without fetching.
+All eight role markets are loaded into memory together, so changing roles updates
+the 📊 source link beside the dropdown and results immediately without fetching.
+Closed role markets stay selectable and show their settled result when available.
 The section title stays “הממשלה הבאה”. The PM choice reads “ראש הממשלה”; minister and speaker choices include
-“(עד 28 לפברואר 2027)”. The selection stays in place during refreshes. Minister
-lists omit the no-appointment outcome; the speaker list omits “No speaker by Feb 28”.
-Every remaining active outcome above 1%
-is ranked by its unrounded **Yes** midpoint; the 1% cutoff is applied before display
-rounding.
+“(עד 28 לפברואר 2027)”. The selection stays in place during refreshes. The minister
+and speaker lists show the no-appointment outcome if it settles with a positive
+**Yes** payout. Every other live outcome above 1% and every settled outcome with
+a positive **Yes** payout is ranked by its unrounded probability.
 
 The first section, “ממשלה חדשה”, shows non-cumulative probabilities from
 [the next government formed market](https://polymarket.com/event/next-israeli-government-formed-by).
@@ -82,10 +83,10 @@ After “פיזור הכנסת”, “קואליציה” lists the active outco
 [the next government coalition market](https://polymarket.com/event/next-israeli-government-coalition).
 Its short description explains that the first government must be approved by the
 current, 26th Knesset, without another election. Party codes expand to Hebrew
-names; “Other” is shown as “הרכב אחר”. “No government formed” is excluded by both
-its market slug and its label, before quote validation. All remaining active
-outcomes are shown, including those at or below 1%, ordered by their unrounded
-**Yes** midpoints. The probabilities are not renormalized after excluding an
+names; “Other” is shown as “הרכב אחר”. “No government formed” appears if it
+settles with a positive **Yes** payout. All other live and settled outcomes are
+shown, including those at or below 1%, ordered by their unrounded **Yes**
+probabilities. The probabilities are not renormalized after excluding an
 outcome. The 📊 link beside the heading opens the coalition market.
 
 The browser fetches all 11 events in a single HTTP request to the
@@ -97,8 +98,8 @@ the visitor's local time (today, yesterday, or a full date), and counts down to 
 next pull. “עדכון עכשיו” fetches immediately and restarts the one-minute countdown
 after the request finishes. Concurrent requests are prevented, and failed pulls
 retain the previous data and timestamp with a visible error message. All events
-must load and validate before any section updates, keeping the shared timestamp
-accurate.
+must load before any section updates. Available odds and settled payouts must
+validate, keeping the shared timestamp accurate.
 
 Under “הממשלה הבאה”, the page displays candidate
 portraits, names, and percentages. Portraits use
