@@ -55,21 +55,42 @@ export function formatProbability(odds, formatter = percent) {
     return margin === null ? value : `${value} (±${margin})`;
 }
 
+function isResolved(market) {
+    return market.umaResolutionStatus === 'resolved';
+}
+
+function hasMarketOdds(event, market) {
+    return isResolved(market) || (!event.closed && !market.closed && !market.archived && market.active !== false);
+}
+
+function parsePrice(value) {
+    if ((typeof value !== 'number' && typeof value !== 'string') || String(value).trim() === '') {
+        throw new Error('Invalid market price');
+    }
+    const price = Number(value);
+    if (!Number.isFinite(price) || price < 0 || price > 1) throw new Error('Invalid market price');
+    return price;
+}
+
 function getBinaryProbabilities(market) {
     const outcomes = asArray(market.outcomes).map(outcome => String(outcome).trim().toLowerCase());
     if (outcomes.length !== 2 || !outcomes.includes('yes') || !outcomes.includes('no')) {
         throw new Error('Expected Yes/No outcomes');
     }
 
-    if (market.bestBid == null && market.bestAsk == null) throw new Error('Market has no bid or ask');
-    const [bid, ask] = [market.bestBid ?? 0, market.bestAsk ?? 1].map(quote => {
-        if ((typeof quote !== 'number' && typeof quote !== 'string') || String(quote).trim() === '') {
-            throw new Error('Missing market quote');
+    if (isResolved(market)) {
+        const payouts = asArray(market.outcomePrices).map(parsePrice);
+        if (payouts.length !== 2 || Math.abs(payouts[0] + payouts[1] - 1) > Number.EPSILON) {
+            throw new Error('Invalid settlement payouts');
         }
-        const price = Number(quote);
-        if (!Number.isFinite(price) || price < 0 || price > 1) throw new Error('Invalid market quote');
-        return price;
-    });
+        return Object.fromEntries(outcomes.map((outcome, index) => {
+            const probability = payouts[index];
+            return [outcome, { probability, lower: probability, upper: probability }];
+        }));
+    }
+
+    if (market.bestBid == null && market.bestAsk == null) throw new Error('Market has no bid or ask');
+    const [bid, ask] = [market.bestBid ?? 0, market.bestAsk ?? 1].map(parsePrice);
     if (bid > ask) throw new Error('Market bid exceeds ask');
 
     // Gamma quotes the first outcome; complement and reverse its bounds for the other.
@@ -83,7 +104,7 @@ function getBinaryProbabilities(market) {
 function getEventProbabilities(events, slug, marketSlug = slug) {
     const event = events.find(event => event?.slug === slug);
     const market = Array.isArray(event?.markets) ? event.markets.find(market => market?.slug === marketSlug) : undefined;
-    if (!market || market.archived || market.active === false) throw new Error(`Market is unavailable: ${marketSlug}`);
+    if (!market || !hasMarketOdds(event, market)) throw new Error(`Market is unavailable: ${marketSlug}`);
     return getBinaryProbabilities(market);
 }
 
@@ -142,21 +163,26 @@ export function getCoalitionOutcomes(events) {
     if (!event || !Array.isArray(event.markets) || !event.markets.length) {
         throw new Error('Event has no coalition markets');
     }
-    if (event.closed || event.active === false) throw new Error('Coalition event is no longer active');
+    if (event.active === false && !event.closed) throw new Error('Coalition event is no longer active');
 
     const coalitions = [];
     for (const market of event.markets) {
         if (!market || typeof market !== 'object') throw new Error('Invalid coalition market');
-        if (market.closed || market.archived || market.active === false) continue;
+        if (!hasMarketOdds(event, market)) continue;
         const title = typeof market.groupItemTitle === 'string' ? market.groupItemTitle.trim() : '';
-        if (market.slug === COALITION_NO_GOVERNMENT_SLUG || /^no government formed$/i.test(title)) continue;
-        if (!title) throw new Error('Missing coalition name');
+        const noGovernment = market.slug === COALITION_NO_GOVERNMENT_SLUG || /^no government formed$/i.test(title);
+        if (noGovernment && !isResolved(market)) continue;
+        if (!title && !noGovernment) throw new Error('Missing coalition name');
         const { yes: odds } = getBinaryProbabilities(market);
+        if (noGovernment) {
+            if (odds.probability > 0) coalitions.push({ name: 'לא הוקמה ממשלה', ...odds });
+            continue;
+        }
         const name = /^other$/i.test(title) ? 'הרכב אחר'
             : title.split(/\s*\+\s*/).map(party => coalitionParties.get(party) || party).join(' + ');
         coalitions.push({ name, ...odds });
     }
-    if (!coalitions.length) throw new Error('No active coalition markets');
+    if (!coalitions.length) throw new Error('No coalition odds available');
     // Keep all combinations and their quoted odds; excluding an option does not renormalize them.
     return coalitions.sort((a, b) => b.probability - a.probability || a.name.localeCompare(b.name));
 }
@@ -174,25 +200,27 @@ function getImage(market) {
 }
 
 export function getCandidates(event, { omitNoAppointment = false } = {}) {
-    if (!event || !Array.isArray(event.markets) || !event.markets.length) {
+    if (!Array.isArray(event?.markets) || (!event.markets.length && !event.closed)) {
         throw new Error('Event has no markets');
     }
-    if (event.closed || event.active === false) throw new Error('Event is no longer active');
+    if (event.active === false && !event.closed) throw new Error('Event is no longer active');
 
     const candidates = [];
     for (const market of event.markets) {
         if (!market || typeof market !== 'object') throw new Error('Invalid market');
-        if (market.closed || market.archived || market.active === false) continue;
-        if (omitNoAppointment && (
+        if (!hasMarketOdds(event, market)) continue;
+        const resolved = isResolved(market);
+        const noAppointment = omitNoAppointment && (
             /^will-no-(?:next-israeli-minister-|speaker-of-the-knesset-)/i.test(market.slug || '') ||
             /^no (?:next minister|speaker|one)\b/i.test(String(market.groupItemTitle || '').trim())
-        )) continue;
+        );
+        if (noAppointment && !resolved) continue;
 
         const { yes: odds } = getBinaryProbabilities(market);
-        // Apply the threshold to the original probability, before formatting.
-        if (odds.probability <= 0.01) continue;
+        // Apply the live cutoff before rounding and keep positive settlements.
+        if (odds.probability <= (resolved ? 0 : 0.01)) continue;
 
-        let name = market.groupItemTitle;
+        let name = noAppointment ? 'ללא מינוי עד המועד' : market.groupItemTitle;
         if (typeof name !== 'string' || !name.trim()) {
             name = typeof market.question === 'string'
                 ? market.question.match(/^Will (.+?) (?:be|become) (?:the )?next (?:prime minister|speaker of the Knesset|Israeli Minister of [^?]+)/i)?.[1]
@@ -208,10 +236,9 @@ export function getCandidates(event, { omitNoAppointment = false } = {}) {
 
 export function getRoleCandidates(events) {
     if (!Array.isArray(events)) throw new Error('Expected an array of events');
-    return new Map(ROLE_MARKETS.map(role => [
-        role.slug,
-        getCandidates(events.find(event => event?.slug === role.slug), {
-            omitNoAppointment: role.slug !== CANDIDATES_SLUG,
-        }),
-    ]));
+    return new Map(ROLE_MARKETS.map(({ slug }) => {
+        const event = events.find(event => event?.slug === slug);
+        const candidates = getCandidates(event, { omitNoAppointment: slug !== CANDIDATES_SLUG });
+        return [slug, event.closed && !candidates.length ? null : candidates];
+    }));
 }

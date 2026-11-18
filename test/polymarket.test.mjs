@@ -23,6 +23,18 @@ function event(slug, markets) {
     return { slug, markets };
 }
 
+function settledMarket(overrides = {}) {
+    return market({
+        closed: true,
+        active: false,
+        umaResolutionStatus: 'resolved',
+        outcomePrices: '["1", "0"]',
+        bestBid: null,
+        bestAsk: null,
+        ...overrides,
+    });
+}
+
 function near(actual, expected) {
     assert.ok(Math.abs(actual - expected) < 1e-12, `Expected ${expected}, got ${actual}`);
 }
@@ -111,6 +123,75 @@ test('speaker candidates exclude missing-election outcomes and inactive placehol
     assert.equal(formatProbability(candidates[0]), '50% (±10%)');
 });
 
+test('a closed role uses its settled winner and the other roles retain their odds', () => {
+    const events = snapshot();
+    const speaker = events.find(event => event.slug === SPEAKER_SLUG);
+    speaker.closed = true;
+    speaker.active = false;
+    speaker.markets = [
+        settledMarket({ groupItemTitle: 'Matan Kahana', bestBid: 0.2, bestAsk: 0.4 }),
+        settledMarket({ groupItemTitle: 'Amir Ohana', outcomes: ['No', 'Yes'] }),
+        settledMarket({ groupItemTitle: 'No speaker by Feb 28', outcomePrices: [0, 1] }),
+    ];
+
+    const roles = getRoleCandidates(events);
+    assert.equal(roles.size, ROLE_MARKETS.length);
+    assert.deepEqual(roles.get(SPEAKER_SLUG), [{ name: 'Matan Kahana', probability: 1, lower: 1, upper: 1 }]);
+    for (const { slug } of ROLE_MARKETS.filter(role => role.slug !== SPEAKER_SLUG)) {
+        const candidates = roles.get(slug);
+        assert.equal(candidates.length, 1);
+        near(candidates[0].probability, 0.3);
+    }
+});
+
+test('a closed role awaiting settlement has no available odds', () => {
+    const events = snapshot();
+    const speaker = events.find(event => event.slug === SPEAKER_SLUG);
+    speaker.closed = true;
+    speaker.markets = [market({ closed: true, umaResolutionStatus: 'proposed', outcomePrices: '["1", "0"]' })];
+
+    const roles = getRoleCandidates(events);
+    assert.equal(roles.get(SPEAKER_SLUG), null);
+    assert.equal(roles.get(CANDIDATES_SLUG).length, 1);
+});
+
+test('a settled role can report that no appointment was made', () => {
+    const events = snapshot();
+    const speaker = events.find(event => event.slug === SPEAKER_SLUG);
+    speaker.closed = true;
+    speaker.markets = [settledMarket({ groupItemTitle: 'No speaker by Feb 28' })];
+
+    assert.deepEqual(getRoleCandidates(events).get(SPEAKER_SLUG), [
+        { name: 'ללא מינוי עד המועד', probability: 1, lower: 1, upper: 1 },
+    ]);
+});
+
+test('a missing role event or invalid open role market fails validation', () => {
+    const events = snapshot();
+    assert.throws(() => getRoleCandidates(events.filter(event => event.slug !== SPEAKER_SLUG)), /Event has no markets/);
+
+    const speaker = events.find(event => event.slug === SPEAKER_SLUG);
+    speaker.markets = [market({ bestBid: null, bestAsk: null })];
+    assert.throws(() => getRoleCandidates(events), /Market has no bid or ask/);
+});
+
+test('period differences use final payouts for settled deadlines', () => {
+    const events = snapshot();
+    const governmentMarket = events.find(event => event.slug === GOVERNMENT_SLUG)
+        .markets.find(market => market.slug.endsWith('november-30-2026'));
+    Object.assign(governmentMarket, settledMarket({ outcomes: ['No', 'Yes'] }));
+    const government = getGovernmentOutcomes(events);
+    assert.deepEqual(government.november2026, { probability: 0, lower: 0, upper: 0 });
+    assert.deepEqual(government.december2026, { probability: 0.4, lower: 0.2, upper: 0.6 });
+
+    const dissolutionMarket = events.find(event => event.slug === DISSOLUTION_SLUG)
+        .markets.find(market => market.slug.endsWith('december-31-2026'));
+    Object.assign(dissolutionMarket, settledMarket());
+    const dissolution = getDissolutionOutcomes(events);
+    assert.deepEqual(dissolution.octoberDecember2026, { probability: 1, lower: 1, upper: 1 });
+    assert.deepEqual(dissolution.januaryMarch2027, { probability: 0, lower: 0, upper: 0 });
+});
+
 test('inconsistent deadline midpoints still clamp negative period differences to zero', () => {
     const events = snapshot();
     Object.assign(events.find(event => event.slug === GOVERNMENT_SLUG).markets.find(market => market.slug.endsWith('december-31-2026')), { bestBid: 0.8, bestAsk: 0.9 });
@@ -144,6 +225,15 @@ test('one-sided books use price bounds, preserving genuine zero and one quotes',
 test('numeric string quotes and reversed outcome order retain the quote-to-outcome mapping', () => {
     near(quoteProbability({ bestBid: '0.2', bestAsk: '0.8', outcomePrices: undefined }), 0.5);
     near(quoteProbability({ outcomes: [' No ', ' YES '], bestBid: '0.1', bestAsk: '0.3' }), 0.8);
+});
+
+test('settled odds support split payouts and validate both final prices', () => {
+    assert.deepEqual(quoteOdds(settledMarket({ outcomePrices: [0.5, 0.5] })), {
+        name: 'Candidate', probability: 0.5, lower: 0.5, upper: 0.5,
+    });
+    for (const outcomePrices of [undefined, [1], [1, 1], [1, 0, 0], ['', 1], [-1, 2]]) {
+        assert.throws(() => quoteOdds(settledMarket({ outcomePrices })));
+    }
 });
 
 test('empty books and malformed quotes fail validation instead of falling back to trade prices', () => {
@@ -268,6 +358,19 @@ test('coalitions omit no-government outcomes by slug or label and skip inactive 
         market({ groupItemTitle: 'Inactive', active: false, bestBid: null, bestAsk: null }),
     );
     assert.equal(getCoalitionOutcomes(events).length, 3);
+});
+
+test('a settled coalition can report that no government was formed', () => {
+    const coalition = event(COALITION_SLUG, [
+        settledMarket({ slug: COALITION_NO_GOVERNMENT_SLUG, groupItemTitle: undefined }),
+        settledMarket({ groupItemTitle: 'L + Y', outcomePrices: '["0", "1"]' }),
+    ]);
+    coalition.closed = true;
+
+    assert.deepEqual(getCoalitionOutcomes([coalition]), [
+        { name: 'לא הוקמה ממשלה', probability: 1, lower: 1, upper: 1 },
+        { name: 'הליכוד + ישר!', probability: 0, lower: 0, upper: 0 },
+    ]);
 });
 
 test('missing or invalid coalition data fails validation so refresh can retain the previous snapshot', () => {
